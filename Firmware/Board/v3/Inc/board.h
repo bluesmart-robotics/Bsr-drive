@@ -117,8 +117,16 @@ static const float current_meas_period = CURRENT_MEAS_PERIOD;
 #define CURRENT_MEAS_HZ ( (float)(TIM_1_8_CLOCK_HZ) / (float)(2*TIM_1_8_PERIOD_CLOCKS*(TIM_1_8_RCR+1)) )
 static const int current_meas_hz = CURRENT_MEAS_HZ;
 
+// BSR v3.7 board: the VBUS_S divider is R6=10k / R7=1k (ratio (R6+R7)/R7 = 11),
+// same network as a stock v3.5/v3.6-24V board, regardless of the 56V bus this
+// board actually runs. Confirmed against the real schematic (two_ax_PCB.pdf,
+// page 1): DCBUS -> R6 (10k) -> VBUS_S -> R7 (1k) -> AGND, with C1/C106 as
+// filtering caps across R7. Do NOT use the stock >=48V value of 19.0f here -
+// that assumes an 18k/1k divider which this board does not have, and would
+// make the firmware read the bus voltage ~1.73x too HIGH, tripping spurious
+// DC_BUS_OVER_VOLTAGE errors around ~32V instead of the real ~56V limit.
 #if HW_VERSION_VOLTAGE >= 48
-#define VBUS_S_DIVIDER_RATIO 19.0f
+#define VBUS_S_DIVIDER_RATIO 11.0f
 #elif HW_VERSION_VOLTAGE == 24
 #define VBUS_S_DIVIDER_RATIO 11.0f
 #else
