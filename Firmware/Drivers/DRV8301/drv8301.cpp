@@ -117,7 +117,16 @@ bool Drv8301::init() {
 }
 
 void Drv8301::do_checks() {
-    if (state_ != kStateUninitialized && !nfault_gpio_.read()) {
+    if (state_ == kStateUninitialized) {
+        return;
+    }
+    if (!nfault_gpio_.read()) {
+        state_ = kStateUninitialized;
+        return;
+    }
+    // pwrgd_gpio_ is falsy (default-constructed) on boards where PWRGD isn't
+    // wired, so operator bool() short-circuits this to a no-op there.
+    if (pwrgd_gpio_ && !pwrgd_gpio_.read()) {
         state_ = kStateUninitialized;
     }
 }

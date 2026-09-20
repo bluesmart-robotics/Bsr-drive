@@ -46,6 +46,10 @@
 #define DEFAULT_ERROR_PIN 0
 #define DEFAULT_MIN_DC_VOLTAGE 8.0f
 
+// BSR v3.7: GPIO_7/GPIO_8 default to DIGITAL_PULL_UP instead of stock DIGITAL,
+// because they are bodge-wired to the DRV8301 PWRGD outputs (open-drain,
+// active-low) -- see drv8301 pwrgd_gpio_ in board.cpp. A board without the
+// bodge wire yet reads a harmless pulled-up HIGH.
 #define DEFAULT_GPIO_MODES \
     ODriveIntf::GPIO_MODE_DIGITAL, \
     ODriveIntf::GPIO_MODE_UART_A, \
@@ -54,8 +58,8 @@
     ODriveIntf::GPIO_MODE_ANALOG_IN, \
     ODriveIntf::GPIO_MODE_ANALOG_IN, \
     ODriveIntf::GPIO_MODE_DIGITAL, \
-    ODriveIntf::GPIO_MODE_DIGITAL, \
-    ODriveIntf::GPIO_MODE_DIGITAL, \
+    ODriveIntf::GPIO_MODE_DIGITAL_PULL_UP, \
+    ODriveIntf::GPIO_MODE_DIGITAL_PULL_UP, \
     ODriveIntf::GPIO_MODE_ENC0, \
     ODriveIntf::GPIO_MODE_ENC0, \
     ODriveIntf::GPIO_MODE_DIGITAL_PULL_DOWN, \

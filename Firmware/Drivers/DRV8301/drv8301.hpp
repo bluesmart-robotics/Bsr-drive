@@ -32,9 +32,11 @@ public:
     } FaultType_e;
 
     Drv8301(Stm32SpiArbiter* spi_arbiter, Stm32Gpio ncs_gpio,
-            Stm32Gpio enable_gpio, Stm32Gpio nfault_gpio)
+            Stm32Gpio enable_gpio, Stm32Gpio nfault_gpio,
+            Stm32Gpio pwrgd_gpio = {})
             : spi_arbiter_(spi_arbiter), ncs_gpio_(ncs_gpio),
-              enable_gpio_(enable_gpio), nfault_gpio_(nfault_gpio) {}
+              enable_gpio_(enable_gpio), nfault_gpio_(nfault_gpio),
+              pwrgd_gpio_(pwrgd_gpio) {}
 
     /**
      * @brief Prepares the gate driver's configuration.
@@ -57,14 +59,27 @@ public:
     bool init();
 
     /**
-     * @brief Monitors the nFAULT pin.
+     * @brief Monitors the nFAULT pin, and, on boards that have it wired up,
+     * the DRV8301 PWRGD pin.
      *
      * This must be run at an interval of <8ms from the moment the init()
      * functions starts to run, otherwise it's possible that a temporary power
      * loss is missed, leading to unwanted register values.
      * In case of power loss the nFAULT pin can be low for as little as 8ms.
+     *
+     * PWRGD is open-drain, active-low: it goes low when the DRV8301's
+     * internal buck regulator (GVDD) is out of tolerance, which can precede
+     * or accompany a GVDD_UV/GVDD_OV fault register bit. On boards where
+     * pwrgd_gpio is not wired (default-constructed, falsy), this check is
+     * skipped entirely, so this is safe to leave enabled unconditionally.
      */
     void do_checks();
+
+    /**
+     * @brief Returns true if this instance was constructed with a valid
+     * PWRGD GPIO (i.e. the board has PWRGD wired up).
+     */
+    bool has_pwrgd() { return (bool)pwrgd_gpio_; }
 
     /**
      * @brief Returns true if and only if the DRV8301 chip is in an initialized
@@ -125,6 +140,7 @@ private:
     Stm32Gpio ncs_gpio_;
     Stm32Gpio enable_gpio_;
     Stm32Gpio nfault_gpio_;
+    Stm32Gpio pwrgd_gpio_; //!< optional; falsy (default-constructed) on boards where PWRGD is not wired
 
     RegisterFile regs_; //!< Current configuration. If is_ready_ is
                         //!< true then this can be considered consistent

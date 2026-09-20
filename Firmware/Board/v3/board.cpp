@@ -36,18 +36,31 @@ UART_HandleTypeDef* uart_a = &huart4;
 UART_HandleTypeDef* uart_b = &huart2; // TODO: this could be supported in ODrive v3.6 (or similar) using STM32's USART2
 UART_HandleTypeDef* uart_c = nullptr;
 
+// BSR v3.7: PWRGD (DRV8301 pin 12, open-drain/active-low "power good" output)
+// is unused/floating on stock ODrive v3.6 hardware. On this board it is
+// bodge-wired to the GPIO_7 (M0) / GPIO_8 (M1) header pins -- see
+// "modif layout a rajouter" for the wiring. These are the same physical pins
+// as gpios[7]/gpios[8] (exposed to the user as <odrv>.config.gpio7_mode
+// etc), constructed directly here (like nFAULT_GPIO_Port/Pin below) instead
+// of via the gpios[] array, since gpios[] is defined later in this file and
+// referencing it here would read it before it's constructed.
+// Their compile-time default mode is GPIO_MODE_DIGITAL_PULL_UP (see
+// DEFAULT_GPIO_MODES in board.h) so that a board without the bodge wire yet
+// reads a harmless pulled-up HIGH ("power good") instead of a floating value.
 Drv8301 m0_gate_driver{
     &spi3_arbiter,
     {M0_nCS_GPIO_Port, M0_nCS_Pin}, // nCS
     {}, // EN pin (shared between both motors, therefore we actuate it outside of the drv8301 driver)
-    {nFAULT_GPIO_Port, nFAULT_Pin} // nFAULT pin (shared between both motors)
+    {nFAULT_GPIO_Port, nFAULT_Pin}, // nFAULT pin (shared between both motors)
+    {GPIO_7_GPIO_Port, GPIO_7_Pin} // PWRGD_M0, bodge-wired to GPIO_7 (BSR v3.7 only)
 };
 
 Drv8301 m1_gate_driver{
     &spi3_arbiter,
     {M1_nCS_GPIO_Port, M1_nCS_Pin}, // nCS
     {}, // EN pin (shared between both motors, therefore we actuate it outside of the drv8301 driver)
-    {nFAULT_GPIO_Port, nFAULT_Pin} // nFAULT pin (shared between both motors)
+    {nFAULT_GPIO_Port, nFAULT_Pin}, // nFAULT pin (shared between both motors)
+    {GPIO_8_GPIO_Port, GPIO_8_Pin} // PWRGD_M1, bodge-wired to GPIO_8 (BSR v3.7 only)
 };
 
 const float fet_thermistor_poly_coeffs[] =
