@@ -35,6 +35,7 @@ class CANSimple {
         MSG_SET_LINEAR_COUNT,
         MSG_SET_POS_GAIN,
         MSG_SET_VEL_GAINS,
+        MSG_SET_PWRGD_CHECK_ENABLE,  // BSR v3.7: enable/disable DRV8301 PWRGD monitoring
         MSG_CO_HEARTBEAT_CMD = 0x700,  // CANOpen NMT Heartbeat  SEND
     };
 
@@ -78,6 +79,7 @@ class CANSimple {
     static void set_linear_count_callback(Axis& axis, const can_Message_t& msg);
     static void set_pos_gain_callback(Axis& axis, const can_Message_t& msg);
     static void set_vel_gains_callback(Axis& axis, const can_Message_t& msg);
+    static void set_pwrgd_check_enable_callback(Axis& axis, const can_Message_t& msg);
 
     // Other functions
     static void nmt_callback(const Axis& axis, const can_Message_t& msg);

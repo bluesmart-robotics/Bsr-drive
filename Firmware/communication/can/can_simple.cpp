@@ -151,6 +151,9 @@ void CANSimple::do_command(Axis& axis, const can_Message_t& msg) {
         case MSG_SET_VEL_GAINS:
             set_vel_gains_callback(axis, msg);
             break;
+        case MSG_SET_PWRGD_CHECK_ENABLE:
+            set_pwrgd_check_enable_callback(axis, msg);
+            break;
         default:
             break;
     }
@@ -308,6 +311,12 @@ void CANSimple::set_pos_gain_callback(Axis& axis, const can_Message_t& msg) {
 void CANSimple::set_vel_gains_callback(Axis& axis, const can_Message_t& msg) {
     axis.controller_.config_.vel_gain = can_getSignal<float>(msg, 0, 32, true);
     axis.controller_.config_.vel_integrator_gain = can_getSignal<float>(msg, 32, 32, true);
+}
+
+// BSR v3.7: byte 0 != 0 enables the DRV8301 PWRGD check (default), byte 0 ==
+// 0 disables it. Same flag as <odrv>.axisN.motor.config.enable_pwrgd_check.
+void CANSimple::set_pwrgd_check_enable_callback(Axis& axis, const can_Message_t& msg) {
+    axis.motor_.config_.enable_pwrgd_check = can_getSignal<uint8_t>(msg, 0, 8, true) != 0;
 }
 
 bool CANSimple::get_iq_callback(const Axis& axis) {

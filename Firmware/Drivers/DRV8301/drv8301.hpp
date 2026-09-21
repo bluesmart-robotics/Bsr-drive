@@ -71,9 +71,14 @@ public:
      * internal buck regulator (GVDD) is out of tolerance, which can precede
      * or accompany a GVDD_UV/GVDD_OV fault register bit. On boards where
      * pwrgd_gpio is not wired (default-constructed, falsy), this check is
-     * skipped entirely, so this is safe to leave enabled unconditionally.
+     * skipped entirely regardless of check_pwrgd, so this is safe to leave
+     * enabled unconditionally.
+     *
+     * @param check_pwrgd BSR v3.7: pass false to ignore PWRGD even if
+     * pwrgd_gpio is wired up (see Motor::Config_t::enable_pwrgd_check).
+     * nFAULT is always checked regardless of this parameter.
      */
-    void do_checks();
+    void do_checks(bool check_pwrgd = true);
 
     /**
      * @brief Returns true if this instance was constructed with a valid

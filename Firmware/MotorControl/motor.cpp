@@ -345,7 +345,7 @@ void Motor::disarm_with_error(Motor::Error error){
 }
 
 bool Motor::do_checks(uint32_t timestamp) {
-    gate_driver_.do_checks();
+    gate_driver_.do_checks(config_.enable_pwrgd_check);
 
     if (!gate_driver_.is_ready()) {
         disarm_with_error(ERROR_DRV_FAULT);

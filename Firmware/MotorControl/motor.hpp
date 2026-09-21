@@ -49,6 +49,14 @@ public:
 
         float dc_calib_tau = 0.2f;
 
+        // BSR v3.7: whether to monitor the DRV8301 PWRGD pin (bodge-wired to
+        // GPIO_7/GPIO_8, see board.cpp). Defaults to true. Set to false on a
+        // board where the PWRGD bodge wire has not been installed yet (or to
+        // ignore it for diagnostics) - this only affects PWRGD; nFAULT is
+        // always checked regardless of this setting. Reachable over USB/UART
+        // (this config endpoint) and CAN (MSG_SET_PWRGD_CHECK_ENABLE).
+        bool enable_pwrgd_check = true;
+
         // custom property setters
         Motor* parent = nullptr;
         void set_pre_calibrated(bool value) {

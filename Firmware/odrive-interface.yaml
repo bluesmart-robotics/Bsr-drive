@@ -927,6 +927,15 @@ interfaces:
               Note that this feature is only works on devices with three current
               sensors (e.g. ODrive v4).
           dc_calib_tau: float32
+          enable_pwrgd_check:
+            type: bool
+            doc: |
+              BSR v3.7: whether to monitor the DRV8301 PWRGD pin (bodge-wired
+              to GPIO_7 for M0 / GPIO_8 for M1). Defaults to True. Set to
+              False on a board where the PWRGD bodge wire has not been
+              installed yet, or to ignore PWRGD for diagnostics. This does
+              not affect the nFAULT check, which is always active.
+              Also reachable over CAN via MSG_SET_PWRGD_CHECK_ENABLE.
 
   ODrive.Oscilloscope:
     c_is_class: True

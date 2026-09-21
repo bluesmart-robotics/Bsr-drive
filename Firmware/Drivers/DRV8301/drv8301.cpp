@@ -116,7 +116,7 @@ bool Drv8301::init() {
     return state_ == kStateReady;
 }
 
-void Drv8301::do_checks() {
+void Drv8301::do_checks(bool check_pwrgd) {
     if (state_ == kStateUninitialized) {
         return;
     }
@@ -126,7 +126,10 @@ void Drv8301::do_checks() {
     }
     // pwrgd_gpio_ is falsy (default-constructed) on boards where PWRGD isn't
     // wired, so operator bool() short-circuits this to a no-op there.
-    if (pwrgd_gpio_ && !pwrgd_gpio_.read()) {
+    // check_pwrgd additionally lets the user disable this specific check at
+    // runtime (e.g. on a board where the PWRGD bodge wire wasn't installed
+    // yet but the GPIO ended up reading low for some other reason).
+    if (check_pwrgd && pwrgd_gpio_ && !pwrgd_gpio_.read()) {
         state_ = kStateUninitialized;
     }
 }
