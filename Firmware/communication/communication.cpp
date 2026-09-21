@@ -35,9 +35,14 @@ char serial_number_str[13]; // 12 digits + null termination
 /* Private function prototypes -----------------------------------------------*/
 /* Function implementations --------------------------------------------------*/
 
-void init_communication(void) {
-    //printf("hi!\r\n");
-
+// BSR v3.7: split out of init_communication() and called later from
+// rtos_main(), after axis.motor_.setup() instead of before it. Community
+// reports (ODrive forum: "Odrive UART communication failure[Fixed But...]")
+// diagnosed a race where the UART server thread spawned here competed with
+// motor/DRV8301 hardware setup that ran afterwards in the original ordering,
+// eventually causing the UART TX line to silently stop responding. Moving
+// this call after motor_.setup() (see main.cpp) avoids that race.
+void start_uart_servers(void) {
     // Dual UART operation not supported yet
     if (odrv.config_.enable_uart_a && odrv.config_.enable_uart_b) {
         odrv.misconfigured_ = true;
@@ -48,6 +53,10 @@ void init_communication(void) {
     } else if (odrv.config_.enable_uart_b && uart_b) {
         start_uart_server(uart_b);
     }
+}
+
+void init_communication(void) {
+    //printf("hi!\r\n");
 
     start_usb_server();
 

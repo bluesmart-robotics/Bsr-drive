@@ -554,6 +554,12 @@ static void rtos_main(void*) {
         axis.acim_estimator_.idq_src_.connect_to(&axis.motor_.Idq_setpoint_);
     }
 
+    // BSR v3.7: start the UART server(s) only now, after motor/encoder setup
+    // is done, instead of earlier inside init_communication(). See the
+    // comment on start_uart_servers() for why (forum-reported race causing
+    // UART TX to silently stop responding).
+    start_uart_servers();
+
     // Start PWM and enable adc interrupts/callbacks
     start_adc_pwm();
     start_analog_thread();

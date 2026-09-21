@@ -15,6 +15,7 @@ extern "C" {
 #include <cmsis_os.h>
 
 void init_communication(void);
+void start_uart_servers(void); // BSR v3.7: called separately from main.cpp, after motor setup
 
 #ifdef __cplusplus
 }

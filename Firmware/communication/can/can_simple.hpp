@@ -35,7 +35,12 @@ class CANSimple {
         MSG_SET_LINEAR_COUNT,
         MSG_SET_POS_GAIN,
         MSG_SET_VEL_GAINS,
-        MSG_SET_PWRGD_CHECK_ENABLE,  // BSR v3.7: enable/disable DRV8301 PWRGD monitoring
+        // BSR v3.7: backported from upstream fw-v0.5.6 (ids 0x1C/0x1D there
+        // too), inserted here rather than after MSG_SET_PWRGD_CHECK_ENABLE so
+        // the numeric ids match upstream/ODrive Pro tooling (DBC files etc).
+        MSG_GET_ADC_VOLTAGE,
+        MSG_GET_CONTROLLER_ERROR,
+        MSG_SET_PWRGD_CHECK_ENABLE,  // BSR v3.7 custom, id 0x1E: enable/disable DRV8301 PWRGD monitoring
         MSG_CO_HEARTBEAT_CMD = 0x700,  // CANOpen NMT Heartbeat  SEND
     };
 
@@ -63,6 +68,8 @@ class CANSimple {
     bool get_iq_callback(const Axis& axis);
     bool get_sensorless_estimates_callback(const Axis& axis);
     bool get_vbus_voltage_callback(const Axis& axis);
+    // msg.rtr bit must NOT be set
+    bool get_adc_voltage_callback(const Axis& axis, const can_Message_t& msg);
 
     // Set functions
     static void set_axis_nodeid_callback(Axis& axis, const can_Message_t& msg);
