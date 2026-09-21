@@ -41,6 +41,16 @@ class CANSimple {
         MSG_GET_ADC_VOLTAGE,
         MSG_GET_CONTROLLER_ERROR,
         MSG_SET_PWRGD_CHECK_ENABLE,  // BSR v3.7 custom, id 0x1E: enable/disable DRV8301 PWRGD monitoring
+        // BSR v3.7 custom, id 0x1F: THE LAST FREE ID IN THE 5-BIT COMMAND
+        // SPACE (get_cmd_id() only keeps the bottom 5 bits of the CAN
+        // arbitration id, i.e. ids 0-31; MSG_CO_HEARTBEAT_CMD lives outside
+        // that space at a fixed absolute id, 0x700, so it doesn't compete
+        // for a slot). Do NOT add any more plain enum entries after this one
+        // - there is no room left. Generic Fibre endpoint access (get/set
+        // any property or call any function by its numeric endpoint id, the
+        // same ids USB/UART already use) - see endpoint_op_callback() for
+        // the wire format and rationale.
+        MSG_CAN_ENDPOINT_OP,
         MSG_CO_HEARTBEAT_CMD = 0x700,  // CANOpen NMT Heartbeat  SEND
     };
 
@@ -70,6 +80,9 @@ class CANSimple {
     bool get_vbus_voltage_callback(const Axis& axis);
     // msg.rtr bit must NOT be set
     bool get_adc_voltage_callback(const Axis& axis, const can_Message_t& msg);
+    // BSR v3.7 custom: generic get/set of any Fibre endpoint (property or
+    // function) by numeric id, mirroring what USB/UART already expose.
+    bool endpoint_op_callback(const Axis& axis, const can_Message_t& msg);
 
     // Set functions
     static void set_axis_nodeid_callback(Axis& axis, const can_Message_t& msg);
