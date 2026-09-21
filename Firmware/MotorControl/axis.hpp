@@ -101,6 +101,12 @@ public:
     struct CAN_t {
         uint32_t last_heartbeat = 0;
         uint32_t last_encoder = 0;
+        // BSR v3.7: last error_ value that was actually broadcast in a
+        // heartbeat, so CANSimple::service_stack() can detect a change and
+        // push a heartbeat immediately instead of waiting up to
+        // heartbeat_rate_ms for the next periodic one - see the comment
+        // there for what "immediately" really means in practice.
+        Error last_reported_error = ERROR_NONE;
     };
 
     Axis(int axis_num,

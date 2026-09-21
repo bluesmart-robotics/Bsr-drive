@@ -509,9 +509,26 @@ uint32_t CANSimple::service_stack() {
     for (auto& a : axes) {
         MEASURE_TIME(a.task_times_.can_heartbeat) {
             if (a.config_.can.heartbeat_rate_ms > 0) {
-                if ((now - a.can_.last_heartbeat) >= a.config_.can.heartbeat_rate_ms) {
-                    if (send_heartbeat(a))
+                // BSR v3.7: push a heartbeat right away if axis.error_
+                // changed since the last one we sent, instead of always
+                // waiting for the periodic timer below. This is a
+                // polling-and-push scheme, not a hardware interrupt: it
+                // only fires the next time service_stack() itself runs.
+                // In practice that's very soon (this loop also re-runs
+                // whenever a CAN frame is sent/received, and again after at
+                // most min(heartbeat_rate_ms, encoder_rate_ms, ...) across
+                // all axes - with the default encoder_rate_ms=10ms that's
+                // ~10ms worst case), but it is NOT instantaneous the way a
+                // CAN controller's own RX interrupt is on the receiving
+                // node - that part already happens "for free" in hardware
+                // on whatever node picks up the frame, independent of what
+                // firmware change we make here.
+                bool error_changed = (a.error_ != a.can_.last_reported_error);
+                if (error_changed || (now - a.can_.last_heartbeat) >= a.config_.can.heartbeat_rate_ms) {
+                    if (send_heartbeat(a)) {
                         a.can_.last_heartbeat = now;
+                        a.can_.last_reported_error = a.error_;
+                    }
                 }
 
                 int nextAxisService = a.can_.last_heartbeat + a.config_.can.heartbeat_rate_ms - now;
