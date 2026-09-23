@@ -98,12 +98,56 @@ real MIT-mode actuators are addressed on a bus. Full setup steps, wire
 format, and known limitations are documented in
 `Firmware/docs/MIT_MODE_BSR.md`.
 
+(Commit `c21d1eba`, adding this changelog file, isn't listed separately -
+it documents commits 1-7 above and is otherwise self-explanatory.)
+
+## 8. `e932c06a` - Fix MIT-mode watchdog gap, detect CAN id conflicts, add bus health telemetry
+
+Three CAN safety/diagnostics fixes, prompted by configuring E-dolly's two
+axes very differently (wheel in velocity/torque control, damper in MIT
+mode):
+
+- MIT-mode commands (commit 7) never fed the axis watchdog, since
+  `mit_command_callback()` bypasses the normal `do_command()` dispatcher
+  that feeds it for every other command. Fixed - an axis driven purely
+  over MIT mode now correctly disarms if commands stop arriving (with
+  `enable_watchdog`/`watchdog_timeout` configured), instead of either
+  tripping spuriously or (without the watchdog enabled) having no
+  protection at all against a dead master or dropped bus.
+- Added `CANSimple::check_can_id_conflicts()`, which flags
+  `odrv0.can.error`'s `DUPLICATE_CAN_IDS` bit (declared upstream in
+  odrive-interface.yaml but never actually set by any code until now) if
+  any axis's normal CAN range and any axis's `mit_can_id` overlap - catches
+  a config typo before it silently corrupts CAN traffic. Also fixed
+  `clear_errors()` not clearing `can_.error_`, which would have made this
+  flag a one-way trip requiring a reboot.
+- Added `odrv0.can.tx_error_count`/`rx_error_count`/`is_bus_off`, read
+  from the STM32 bxCAN peripheral's ESR register, so a master can notice a
+  physically degraded bus (loose connector, bad wiring/termination) from
+  rising error counts instead of only seeing a generic send failure after
+  the fact.
+
+See `Firmware/docs/CAN_SAFETY_BSR.md` for the full writeup.
+
+## 9. `bd75692e` - Add BSR v3.7 CAN DBC file and generator script
+
+Added `tools/create_bsr_can_dbc.py` and the `tools/bsr-v3.7-cansimple.dbc`
+it generates: a self-contained DBC (only needs `cantools`, not the
+`odrive` python package upstream's own DBC script depends on) covering
+every CANSimple message for this project's actual two axes - including
+both BSR-custom messages and the MIT-mode command/reply frames - so any
+DBC-aware tool (SavvyCAN, PCAN-View, `cantools`, or a custom CAN stack) can
+decode/encode BSR v3.7's traffic directly instead of hand-deriving frame
+layouts from the firmware source or `MIT_MODE_BSR.md`. The MIT-mode
+signal bit positions were verified by round-tripping `cantools`'
+encode/decode against the exact reference packing code in that doc.
+
 ---
 
 ## When pushing to GitHub
 
-These 7 commits are currently local-only on `bsr-v3.7` (the `origin`
-remote is upstream's public repo and must not receive them). Once BSR's
-own private repository is reachable, push `bsr-v3.7` there and update this
+These commits are currently local-only on `bsr-v3.7` (the `origin` remote
+is upstream's public repo and must not receive them). Once BSR's own
+private repository is reachable, push `bsr-v3.7` there and update this
 note. Patch files (`000N-*.patch`, via `git format-patch`) and a
 `bsr-odrive-v3.7.zip` snapshot are kept as an interim backup until then.
