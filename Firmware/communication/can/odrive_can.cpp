@@ -42,6 +42,22 @@ bool ODriveCAN::start_server(CAN_HandleTypeDef* handle) {
     return true;
 }
 
+// BSR v3.7: bus health telemetry - see odrive-interface.yaml's doc on
+// ODrive.Can.tx_error_count/rx_error_count/is_bus_off. TEC/REC/BOFF live in
+// the bxCAN peripheral's ESR register (bits 31:24, 23:16, and bit 2
+// respectively - see CAN_ESR_TEC/CAN_ESR_REC/CAN_ESR_BOFF in
+// stm32f405xx.h), which nothing in this firmware was reading before; only
+// the coarser HAL_CAN_GetError() bitmask was used, which is enough to
+// detect *that* something is wrong but not to see the trend building up to
+// it (rising error counts) or confirm the transceiver/wiring rather than
+// firmware is at fault.
+void ODriveCAN::update_bus_health() {
+    uint32_t esr = handle_->Instance->ESR;
+    tx_error_count_ = (esr & CAN_ESR_TEC) >> CAN_ESR_TEC_Pos;
+    rx_error_count_ = (esr & CAN_ESR_REC) >> CAN_ESR_REC_Pos;
+    is_bus_off_ = (esr & CAN_ESR_BOFF) != 0;
+}
+
 void ODriveCAN::can_server_thread() {
     Protocol protocol = config_.protocol;
 
@@ -50,6 +66,7 @@ void ODriveCAN::can_server_thread() {
     }
 
     for (;;) {
+        update_bus_health();
         uint32_t status = HAL_CAN_GetError(handle_);
         if (status == HAL_CAN_ERROR_NONE) {
             uint32_t next_service_time = UINT32_MAX;

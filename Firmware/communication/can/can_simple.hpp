@@ -4,6 +4,14 @@
 #include "canbus.hpp"
 #include "axis.hpp"
 
+// BSR v3.7: forward declaration only - ODriveCAN's full definition (in
+// odrive_can.hpp) can't be #included here, since odrive_can.hpp is what
+// includes this file (CANSimple is one of its members). We only need a
+// pointer to it, to report bus-level errors like ERROR_DUPLICATE_CAN_IDS -
+// see check_can_id_conflicts() below. can_simple.cpp gets the full
+// definition transitively via <odrive_main.h>, which is all it needs.
+class ODriveCAN;
+
 class CANSimple {
    public:
     enum {
@@ -54,7 +62,7 @@ class CANSimple {
         MSG_CO_HEARTBEAT_CMD = 0x700,  // CANOpen NMT Heartbeat  SEND
     };
 
-    CANSimple(CanBusBase* canbus) : canbus_(canbus) {}
+    CANSimple(CanBusBase* canbus, ODriveCAN* odrive_can) : canbus_(canbus), odrive_can_(odrive_can) {}
 
     bool init();
     uint32_t service_stack();
@@ -82,6 +90,18 @@ class CANSimple {
     void mit_command_callback(size_t axis_num, const can_Message_t& msg);
     static uint16_t mit_float_to_uint(float x, float x_min, float x_max, int bits);
     static float mit_uint_to_float(uint16_t x_int, float x_min, float x_max, int bits);
+
+    // BSR v3.7: catches CAN id conflicts between the two independent
+    // addressing schemes now in use - each axis's normal node_id<<5..+31
+    // command range, and any axis's dedicated mit_can_id (which lives
+    // outside that scheme entirely, see renew_mit_subscription() above).
+    // Nothing previously stopped a typo'd mit_can_id from silently
+    // colliding with another id already in use; this flags
+    // Can.error.DUPLICATE_CAN_IDS (declared upstream in
+    // odrive-interface.yaml but never actually set by anything until now)
+    // when it happens, instead of leaving both callbacks to silently
+    // misinterpret each other's frames.
+    void check_can_id_conflicts();
 
     void handle_can_message(const can_Message_t& msg);
 
@@ -139,6 +159,10 @@ class CANSimple {
     }
 
     CanBusBase* canbus_;
+    // BSR v3.7: see the constructor and the forward declaration above -
+    // used only to report bus-level errors, never for the bus API itself
+    // (that stays behind the CanBusBase abstraction via canbus_).
+    ODriveCAN* odrive_can_;
     CanBusBase::CanSubscription* subscription_handles_[AXIS_COUNT];
 
     // TODO: we this is a hack but actually we should use protocol hooks to

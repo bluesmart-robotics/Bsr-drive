@@ -94,6 +94,72 @@ bool CANSimple::renew_mit_subscription(size_t i) {
         &mit_ctx_[i], &mit_subscription_handles_[i]);
 }
 
+// BSR v3.7: see the declaration in can_simple.hpp. Checks, across all
+// axes, for any overlap between: (a) each axis's normal CANSimple command
+// range (node_id << NUM_CMD_ID_BITS .. +31), and (b) any axis's dedicated
+// mit_can_id. Both node_id and mit_can_id are free-form user config with no
+// prior cross-checking between them, so a typo (or copy-pasting axis0's
+// config onto axis1 and only remembering to change node_id) can silently
+// make two callbacks fire on the same physical CAN frame - one reading it
+// as a normal command, the other as an 8-byte MIT command - with no error
+// or warning before this. Standard (11-bit) and extended (29-bit) frames
+// are genuinely different arbitration id spaces on the wire, so ids are
+// only compared for conflict when is_extended matches.
+//
+// This only sets Can.error.DUPLICATE_CAN_IDS - it never clears it - to
+// match how every other *.error flag in this firmware behaves (see e.g.
+// Axis::ERROR_WATCHDOG_TIMER_EXPIRED): once flagged, it stays flagged until
+// an explicit clear_errors(), so a conflict that only happens briefly (e.g.
+// mid-edit of the config over USB) still gets noticed.
+void CANSimple::check_can_id_conflicts() {
+    auto node_range = [](const Axis& a) {
+        uint32_t lo = a.config_.can.node_id << NUM_CMD_ID_BITS;
+        uint32_t hi = lo + ((1u << NUM_CMD_ID_BITS) - 1);
+        return std::pair<uint32_t, uint32_t>(lo, hi);
+    };
+
+    bool conflict = false;
+
+    for (size_t i = 0; i < AXIS_COUNT && !conflict; ++i) {
+        auto [lo_i, hi_i] = node_range(axes[i]);
+
+        // axis i's normal range vs every other axis's normal range
+        for (size_t j = i + 1; j < AXIS_COUNT && !conflict; ++j) {
+            if (axes[i].config_.can.is_extended != axes[j].config_.can.is_extended) {
+                continue;
+            }
+            auto [lo_j, hi_j] = node_range(axes[j]);
+            if (lo_i <= hi_j && lo_j <= hi_i) {
+                conflict = true;
+            }
+        }
+
+        // axis i's mit_can_id (if enabled) vs every axis's normal range,
+        // and every other enabled axis's mit_can_id
+        if (mit_enabled_[i]) {
+            uint32_t mid = mit_can_ids_[i];
+            for (size_t j = 0; j < AXIS_COUNT && !conflict; ++j) {
+                if (axes[j].config_.can.is_extended != axes[i].config_.can.is_extended) {
+                    continue;
+                }
+                auto [lo_j, hi_j] = node_range(axes[j]);
+                if (mid >= lo_j && mid <= hi_j) {
+                    conflict = true;
+                    break;
+                }
+                if (j != i && mit_enabled_[j] && mit_can_ids_[j] == mid) {
+                    conflict = true;
+                    break;
+                }
+            }
+        }
+    }
+
+    if (conflict) {
+        odrive_can_->error_ |= ODriveIntf::CanIntf::ERROR_DUPLICATE_CAN_IDS;
+    }
+}
+
 // BSR v3.7: linear <-> fixed-point mapping used by the MIT-mode wire
 // format, matching the widely-reproduced reference implementation
 // originally from the MIT Biomimetics Robotics Lab's Mini Cheetah actuator
@@ -138,6 +204,19 @@ void CANSimple::mit_command_callback(size_t axis_num, const can_Message_t& msg) 
     Axis& axis = axes[axis_num];
     Axis::CANConfig_t& can_cfg = axis.config_.can;
     const uint8_t* buf = msg.buf;
+
+    // BSR v3.7 fix: every normal CANSimple command feeds the axis watchdog
+    // (see do_command() below), but this callback bypasses do_command()
+    // entirely (it's a separate subscription, not a CANSimple message - see
+    // the class comment on renew_mit_subscription() in can_simple.hpp), so
+    // it was never feeding the watchdog either. Left unfixed, an axis
+    // driven purely over MIT mode with config.enable_watchdog set would
+    // trip spuriously (false disarm while commands ARE arriving), and one
+    // without the watchdog enabled had no protection at all against a dead
+    // master or a dropped bus: it would just keep applying the last
+    // Kp/Kd/torque_ff forever. Feeding it here makes MIT-mode commands
+    // count as "alive" exactly like every other command source.
+    axis.watchdog_feed();
 
     uint16_t p_int = ((uint16_t)buf[0] << 8) | buf[1];
     uint16_t v_int = ((uint16_t)buf[2] << 4) | (buf[3] >> 4);
@@ -642,6 +721,12 @@ uint32_t CANSimple::service_stack() {
             renew_mit_subscription(i);
         }
     }
+
+    // BSR v3.7: cheap (AXIS_COUNT <= 2) so it's fine to just run every tick
+    // rather than only on change, unlike the subscription renewals above -
+    // this also means a conflict introduced by, say, changing axis0's
+    // node_id to match axis1's mit_can_id gets caught immediately.
+    check_can_id_conflicts();
 
     for (auto& a : axes) {
         MEASURE_TIME(a.task_times_.can_heartbeat) {

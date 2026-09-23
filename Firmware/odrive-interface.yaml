@@ -425,6 +425,40 @@ interfaces:
           baud_rate: {type: uint32, c_setter: 'set_baud_rate'}
           protocol:
             type: Protocol
+      # BSR v3.7 custom: bus-level health telemetry, read from the STM32
+      # bxCAN peripheral's error status register (ESR) once per CAN service
+      # loop iteration (see ODriveCAN::update_bus_health()). Lets a master
+      # notice a physically degraded bus - a connector working loose from
+      # vibration on a moving robot, bad/missing termination, wiring damage -
+      # from rising error counters, instead of only ever seeing a generic
+      # send-message failure after things have already gone wrong.
+      tx_error_count:
+        type: readonly uint8
+        brief: STM32 bxCAN transmit error counter (TEC).
+        doc: |
+          Per the CAN bus spec, this increments on a failed transmission and
+          decrements on a successful one. >= 128 means this node has gone
+          "error passive" (still participates, but signals errors passively);
+          continuing to climb from there leads to bus-off (see `is_bus_off`).
+          On a healthy, properly wired and terminated bus this should read 0
+          almost all the time - a nonzero value worth investigating, even if
+          it never reaches bus-off.
+      rx_error_count:
+        type: readonly uint8
+        brief: STM32 bxCAN receive error counter (REC).
+        doc: Same idea as `tx_error_count`, but counts receive-side errors.
+      is_bus_off:
+        type: readonly bool
+        brief: True if the CAN peripheral is currently in the bus-off state.
+        doc: |
+          Set when `tx_error_count` reaches 256 and the peripheral disconnects
+          itself from the bus, per the CAN spec, to avoid disrupting other
+          nodes. This board has `AutoBusOff` enabled (see `Board/v3/Src/
+          can.c`), so the hardware automatically re-arbitrates and rejoins the
+          bus once conditions clear - no firmware or master action is needed
+          for that part. Still, a bus that goes bus-off even occasionally
+          points to a real physical/wiring problem worth fixing, not just a
+          transient to ignore because it self-heals.
 
   ODrive.Endpoint:
     c_is_class: False

@@ -242,6 +242,11 @@ void ODrive::clear_errors() {
         axis.encoder_.spi_error_rate_ = 0.0f;
         axis.error_ = Axis::ERROR_NONE;
     }
+    // BSR v3.7: can_.error_ (e.g. DUPLICATE_CAN_IDS - see
+    // CANSimple::check_can_id_conflicts()) was not previously cleared here,
+    // which would have made it a one-way flag with no way to reset it short
+    // of a reboot once set.
+    can_.error_ = ODriveCAN::ERROR_NONE;
     error_ = ERROR_NONE;
     if (odrv.config_.enable_brake_resistor) {
         safety_critical_arm_brake_resistor();
