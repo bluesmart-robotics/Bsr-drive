@@ -600,6 +600,73 @@ interfaces:
       is_extended: bool
       heartbeat_rate_ms: uint32
       encoder_rate_ms: uint32
+      # BSR v3.7 custom: MIT-mode (Cheetah-style) direct CAN control, see
+      # INPUT_MODE_MIT on Controller. Addressed by its own dedicated CAN
+      # arbitration id (mit_can_id) rather than through the normal
+      # node_id/cmd_id scheme used by every other CANSimple message - that
+      # 5-bit command space (ids 0-31) is already fully allocated, and this
+      # also matches how real MIT-mode actuators (CubeMars AK-series,
+      # Damiao, RobStride, ...) are addressed in practice: one CAN id IS
+      # the command, sent straight to that joint.
+      enable_mit:
+        type: bool
+        doc: Enables reception of MIT-mode command frames on `mit_can_id` for this axis.
+      mit_can_id:
+        type: uint32
+        doc: |
+          Dedicated CAN arbitration id this axis listens on for MIT-mode
+          8-byte command frames, when `enable_mit` is true. Independent of
+          `node_id` - pick a value not used by any other node on the bus.
+      mit_reply_can_id:
+        type: uint32
+        doc: |
+          CAN arbitration id this axis replies on after each MIT-mode
+          command it receives (5-byte frame: measured position/velocity/
+          torque, packed the same way as the command - see `mit_pos_min`
+          etc.). This is BSR's own reply format, not a byte-for-byte clone
+          of any specific vendor's telemetry frame - a master built for a
+          particular MIT-mode actuator brand may need its reply parsing
+          adjusted even if its *command*-sending code works unmodified.
+      mit_pos_min:
+        type: float32
+        unit: turn
+        doc: Lower bound of the 16-bit fixed-point position range used to pack/unpack MIT-mode CAN frames. Must match what the master uses.
+      mit_pos_max:
+        type: float32
+        unit: turn
+        doc: Upper bound of the 16-bit fixed-point position range - see `mit_pos_min`.
+      mit_vel_min:
+        type: float32
+        unit: turn/s
+        doc: Lower bound of the 12-bit fixed-point velocity range used to pack/unpack MIT-mode CAN frames.
+      mit_vel_max:
+        type: float32
+        unit: turn/s
+        doc: Upper bound of the 12-bit fixed-point velocity range - see `mit_vel_min`.
+      mit_kp_min:
+        type: float32
+        unit: N·m/turn
+        doc: Lower bound of the 12-bit fixed-point Kp range used to pack/unpack MIT-mode CAN frames.
+      mit_kp_max:
+        type: float32
+        unit: N·m/turn
+        doc: Upper bound of the 12-bit fixed-point Kp range - see `mit_kp_min`.
+      mit_kd_min:
+        type: float32
+        unit: N·m/(turn/s)
+        doc: Lower bound of the 12-bit fixed-point Kd range used to pack/unpack MIT-mode CAN frames.
+      mit_kd_max:
+        type: float32
+        unit: N·m/(turn/s)
+        doc: Upper bound of the 12-bit fixed-point Kd range - see `mit_kd_min`.
+      mit_torque_min:
+        type: float32
+        unit: N·m
+        doc: Lower bound of the 12-bit fixed-point feedforward-torque range used to pack/unpack MIT-mode CAN frames (also used for the measured-torque field of the reply frame).
+      mit_torque_max:
+        type: float32
+        unit: N·m
+        doc: Upper bound of the 12-bit fixed-point feedforward-torque range - see `mit_torque_min`.
 
   ODrive.ThermistorCurrentLimiter:
     c_is_class: False
@@ -1046,11 +1113,39 @@ interfaces:
         type: readonly float32
         unit: turn/s
         doc: The velocity reference actually being used by the velocity controller.  This is the same as `input_vel` in `INPUT_MODE_PASSTHROUGH`, but may vary according to `InputMode`.
-      torque_setpoint: 
+      torque_setpoint:
         type: readonly float32
         unit: N·m
         doc: The torque reference actually being used by the torque controller.  This is the same as `input_vel` in `INPUT_MODE_PASSTHROUGH`, but may vary according to `InputMode`.
-      trajectory_done: 
+      mit_pos_setpoint:
+        type: float32
+        unit: turn
+        doc: |
+          BSR v3.7 custom. `pos_des` for `INPUT_MODE_MIT`'s joint law. Settable
+          directly, or atomically (with the other 4 `mit_*` fields) via the
+          dedicated MIT-mode CAN command frame on `mit_can_id`.
+      mit_vel_setpoint:
+        type: float32
+        unit: turn/s
+        doc: BSR v3.7 custom. `vel_des` for `INPUT_MODE_MIT`'s joint law - see `mit_pos_setpoint`.
+      mit_kp:
+        type: float32
+        unit: N·m/turn
+        doc: |
+          BSR v3.7 custom. `Kp` for `INPUT_MODE_MIT`'s joint law - see
+          `mit_pos_setpoint`. Called "Kp" in the MIT/Cheetah convention, but
+          note this multiplies a *position* error directly into *torque*
+          (N·m/turn), unlike `config.pos_gain` ((turn/s)/turn) which feeds a
+          separate velocity loop - the two are not interchangeable numbers.
+      mit_kd:
+        type: float32
+        unit: N·m/(turn/s)
+        doc: BSR v3.7 custom. `Kd` for `INPUT_MODE_MIT`'s joint law - see `mit_kp`.
+      mit_torque_ff:
+        type: float32
+        unit: N·m
+        doc: BSR v3.7 custom. `torque_ff` for `INPUT_MODE_MIT`'s joint law - see `mit_pos_setpoint`.
+      trajectory_done:
         type: readonly bool
         doc: Indicates the last commanded Trapezoidal Trajectory movement is complete.
       vel_integrator_torque: 
@@ -1722,6 +1817,43 @@ valuetypes:
           Used for tuning your odrive, this mode allows the user to set different frequencies.
           Set control_mode for the loop you want to tune, then set the frequency desired.
           The ODrive will send a 1 turn amplitude sine wave to the controller with the given frequency and phase.
+      MIT:
+        brief: |
+          BSR v3.7 custom. Direct joint PD + feedforward-torque law, computed
+          fresh from `mit_pos_setpoint`/`mit_vel_setpoint`/`mit_kp`/`mit_kd`/
+          `mit_torque_ff` every control loop iteration - NOT through the
+          normal position-loop -> velocity-loop cascade (`config.pos_gain`/
+          `config.vel_gain` are not used in this mode).
+        doc: |
+          Implements the control law popularized as "MIT mode" by the MIT
+          Biomimetics Robotics Lab's Mini Cheetah actuator (Ben Katz), since
+          adopted as a de-facto standard by several commercial BLDC
+          actuator/servo controllers (CubeMars AK-series, Damiao, RobStride,
+          and others):
+
+              torque = Kp * (pos_des - pos) + Kd * (vel_des - vel) + torque_ff
+
+          The key difference from `CONTROL_MODE_POSITION_CONTROL` is that Kp
+          and Kd travel with every setpoint instead of being fixed
+          configuration values - this allows a master controller to vary
+          the joint's mechanical impedance on the fly (e.g. stiff during
+          stance, compliant during swing, for a legged robot), which is
+          exactly what "MIT mode" is used for.
+
+          ### Configuration Values:
+          * `mit_pos_setpoint`, `mit_vel_setpoint`, `mit_kp`, `mit_kd`,
+            `mit_torque_ff` - settable individually over USB/UART/CAN like
+            any other property, or all five atomically in one dedicated CAN
+            frame (not a CANSimple message id - see `Axis.config.can.enable_mit` /
+            `mit_can_id`) for the wire-compatible, high-rate use case this
+            mode is meant for.
+
+          ### Valid Control Modes:
+          * `CONTROL_MODE_TORQUE_CONTROL` only. Using any other control mode
+            with `INPUT_MODE_MIT` raises `ERROR_INVALID_INPUT_MODE` - the
+            normal position/velocity loops must be bypassed for this mode's
+            Kp/Kd to mean what they say, instead of stacking on top of
+            `config.pos_gain`/`config.vel_gain`.
 
   ODrive.Motor.MotorType:
     values:

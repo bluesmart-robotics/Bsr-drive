@@ -260,6 +260,33 @@ bool Controller::update() {
             vel_setpoint_ = input_vel_ + autotuning_.vel_amplitude * c;
             torque_setpoint_ = input_torque_ + autotuning_.torque_amplitude * -s;
         } break;
+        case INPUT_MODE_MIT: {
+            // BSR v3.7: MIT/Cheetah-style joint law - a single-shot PD +
+            // feedforward-torque law computed directly from setpoint and
+            // gains that both arrive fresh with every command (see
+            // odrive-interface.yaml for the full rationale):
+            //     torque = Kp*(pos_des - pos) + Kd*(vel_des - vel) + torque_ff
+            // This intentionally does NOT go through the position-loop ->
+            // velocity-loop cascade below (config_.pos_gain/vel_gain) - Kp/Kd
+            // are supplied per-command instead of being fixed config, which
+            // is the entire point of "MIT mode" (variable impedance). That
+            // cascade only runs for control_mode >= POSITION_CONTROL /
+            // VELOCITY_CONTROL, so requiring TORQUE_CONTROL here is what
+            // keeps this law from being stacked on top of the normal one.
+            if (config_.control_mode != CONTROL_MODE_TORQUE_CONTROL) {
+                set_error(ERROR_INVALID_INPUT_MODE);
+                return false;
+            }
+            if (!pos_estimate_linear.has_value() || !vel_estimate.has_value()) {
+                set_error(ERROR_INVALID_ESTIMATE);
+                return false;
+            }
+            pos_setpoint_ = mit_pos_setpoint_;
+            vel_setpoint_ = mit_vel_setpoint_;
+            torque_setpoint_ = mit_kp_ * (mit_pos_setpoint_ - *pos_estimate_linear)
+                              + mit_kd_ * (mit_vel_setpoint_ - *vel_estimate)
+                              + mit_torque_ff_;
+        } break;
         default: {
             set_error(ERROR_INVALID_INPUT_MODE);
             return false;

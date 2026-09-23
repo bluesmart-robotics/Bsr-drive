@@ -56,6 +56,34 @@ public:
         bool is_extended = false;
         uint32_t heartbeat_rate_ms = 100;
         uint32_t encoder_rate_ms = 10;
+
+        // BSR v3.7: MIT-mode (Cheetah-style) direct CAN control - see
+        // Controller::INPUT_MODE_MIT and CANSimple::mit_command_callback().
+        // Disabled by default (enable_mit = false); mit_can_id = 0 is inert
+        // until enable_mit is set, since it's a real, distinct CAN id from
+        // the normal node_id<<NUM_CMD_ID_BITS scheme, not a sub-command of it.
+        bool enable_mit = false;
+        uint32_t mit_can_id = 0;
+        uint32_t mit_reply_can_id = 0;
+
+        // Fixed-point encoding ranges for the 16/12/12/12/12-bit MIT-mode
+        // wire format - generic starting points loosely derived from a
+        // common small-actuator datasheet (CubeMars AK80-6: +-12.5 rad,
+        // +-38.2 rad/s, Kp 0-500 Nm/rad, Kd 0-5 Nm/(rad/s), +-12 Nm,
+        // converted from radians to ODrive's native turns). RETUNE these to
+        // your own actuator/gearbox before relying on them - the whole
+        // point of a fixed-point range is that out-of-range values clamp
+        // silently rather than erroring.
+        float mit_pos_min = -2.0f;    // [turn]
+        float mit_pos_max = 2.0f;     // [turn]
+        float mit_vel_min = -6.0f;    // [turn/s]
+        float mit_vel_max = 6.0f;     // [turn/s]
+        float mit_kp_min = 0.0f;      // [Nm/turn]
+        float mit_kp_max = 3200.0f;   // [Nm/turn]
+        float mit_kd_min = 0.0f;      // [Nm/(turn/s)]
+        float mit_kd_max = 30.0f;     // [Nm/(turn/s)]
+        float mit_torque_min = -12.0f; // [Nm]
+        float mit_torque_max = 12.0f;  // [Nm]
     };
 
     struct Config_t {

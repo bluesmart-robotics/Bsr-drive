@@ -110,6 +110,19 @@ public:
     float input_filter_kp_ = 0.0f;
     float input_filter_ki_ = 0.0f;
 
+    // BSR v3.7: INPUT_MODE_MIT setpoint - see odrive-interface.yaml for the
+    // full explanation. Live command state (like input_pos_/input_vel_/
+    // input_torque_ above), not persisted Config_t - the entire point of
+    // "MIT mode" is that these arrive fresh with every command, typically
+    // at a high rate, atomically via the dedicated MIT-mode CAN command
+    // frame (see Axis::CANConfig_t::mit_can_id / CANSimple::mit_command_callback()
+    // - this is a separate CAN id, not a CANSimple message id).
+    float mit_pos_setpoint_ = 0.0f;  // [turn]
+    float mit_vel_setpoint_ = 0.0f;  // [turn/s]
+    float mit_kp_ = 0.0f;            // [Nm/turn]
+    float mit_kd_ = 0.0f;            // [Nm/(turn/s)]
+    float mit_torque_ff_ = 0.0f;     // [Nm]
+
     Autotuning_t autotuning_;
     float autotuning_phase_ = 0.0f;
     

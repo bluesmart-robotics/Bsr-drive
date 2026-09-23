@@ -20,6 +20,9 @@ bool CANSimple::init() {
         if (!renew_subscription(i)) {
             return false;
         }
+        if (!renew_mit_subscription(i)) {
+            return false;
+        }
     }
 
     return true;
@@ -50,6 +53,129 @@ bool CANSimple::renew_subscription(size_t i) {
             ((CANSimple*)ctx)->handle_can_message(msg);
         },
         this, &subscription_handles_[i]);
+}
+
+// BSR v3.7: mirrors renew_subscription() above, but for the separate,
+// parallel MIT-mode subscription (see the comment on renew_mit_subscription
+// in can_simple.hpp for why this can't just be another do_command() case).
+// A no-op exact-match filter (mask = all bits) is used so this axis's MIT
+// subscription only ever fires for its own mit_can_id.
+bool CANSimple::renew_mit_subscription(size_t i) {
+    Axis& axis = axes[i];
+
+    mit_enabled_[i] = axis.config_.can.enable_mit;
+    mit_can_ids_[i] = axis.config_.can.mit_can_id;
+
+    if (mit_subscription_handles_[i]) {
+        canbus_->unsubscribe(mit_subscription_handles_[i]);
+        mit_subscription_handles_[i] = nullptr;
+    }
+
+    if (!mit_enabled_[i]) {
+        return true;
+    }
+
+    mit_ctx_[i] = {this, i};
+
+    MsgIdFilterSpecs filter = {
+        .id = {},
+        .mask = 0xffffffff};
+    if (axis.config_.can.is_extended) {
+        filter.id = (uint32_t)mit_can_ids_[i];
+    } else {
+        filter.id = (uint16_t)mit_can_ids_[i];
+    }
+
+    return canbus_->subscribe(
+        filter, [](void* ctx, const can_Message_t& msg) {
+            MitCtx* mit_ctx = (MitCtx*)ctx;
+            mit_ctx->self->mit_command_callback(mit_ctx->axis_num, msg);
+        },
+        &mit_ctx_[i], &mit_subscription_handles_[i]);
+}
+
+// BSR v3.7: linear <-> fixed-point mapping used by the MIT-mode wire
+// format, matching the widely-reproduced reference implementation
+// originally from the MIT Biomimetics Robotics Lab's Mini Cheetah actuator
+// (Ben Katz), since adopted as a de-facto standard by several commercial
+// BLDC actuator/servo controllers (CubeMars AK-series, Damiao, RobStride,
+// ...). `bits` must be <= 16 - callers only ever pass 12 or 16.
+uint16_t CANSimple::mit_float_to_uint(float x, float x_min, float x_max, int bits) {
+    x = std::clamp(x, x_min, x_max);
+    float span = x_max - x_min;
+    return (uint16_t)((x - x_min) * (float)((1 << bits) - 1) / span);
+}
+
+float CANSimple::mit_uint_to_float(uint16_t x_int, float x_min, float x_max, int bits) {
+    float span = x_max - x_min;
+    return ((float)x_int) * span / (float)((1 << bits) - 1) + x_min;
+}
+
+// BSR v3.7: MIT-mode command frame (8 bytes) - see Controller::
+// INPUT_MODE_MIT (odrive-interface.yaml) for the control law this feeds,
+// and Axis::CANConfig_t for the per-axis encoding ranges (mit_pos_min/max
+// etc.) that MUST match whatever the master used to pack this frame.
+//
+// Byte layout (16/12/12/12/12 bits, matching the reference "MIT mode"
+// wire format so a controller written for a CubeMars/Damiao/RobStride
+// actuator can drive this axis with the same packing code, just pointed at
+// mit_can_id instead of that actuator's CAN id):
+//   byte 0-1: position   (16 bits) - byte[0]=p_int>>8,  byte[1]=p_int&0xFF
+//   byte 2-3: velocity   (12 bits) - byte[2]=v_int>>4,  byte[3] upper nibble
+//   byte 3-4: Kp         (12 bits) - byte[3] lower nibble, byte[4]
+//   byte 5-6: Kd         (12 bits) - byte[5]=kd_int>>4, byte[6] upper nibble
+//   byte 6-7: torque_ff  (12 bits) - byte[6] lower nibble, byte[7]
+//
+// After applying the command, a 5-byte reply is sent on mit_reply_can_id
+// (if set) with the axis's measured position/velocity/torque, packed the
+// same way (16/12/12 bits - see the doc on mit_reply_can_id for why this
+// reply is BSR's own format rather than a specific vendor's).
+void CANSimple::mit_command_callback(size_t axis_num, const can_Message_t& msg) {
+    if (axis_num >= AXIS_COUNT || msg.len < 8) {
+        return;
+    }
+
+    Axis& axis = axes[axis_num];
+    Axis::CANConfig_t& can_cfg = axis.config_.can;
+    const uint8_t* buf = msg.buf;
+
+    uint16_t p_int = ((uint16_t)buf[0] << 8) | buf[1];
+    uint16_t v_int = ((uint16_t)buf[2] << 4) | (buf[3] >> 4);
+    uint16_t kp_int = (((uint16_t)(buf[3] & 0x0F)) << 8) | buf[4];
+    uint16_t kd_int = ((uint16_t)buf[5] << 4) | (buf[6] >> 4);
+    uint16_t t_int = (((uint16_t)(buf[6] & 0x0F)) << 8) | buf[7];
+
+    axis.controller_.mit_pos_setpoint_ = mit_uint_to_float(p_int, can_cfg.mit_pos_min, can_cfg.mit_pos_max, 16);
+    axis.controller_.mit_vel_setpoint_ = mit_uint_to_float(v_int, can_cfg.mit_vel_min, can_cfg.mit_vel_max, 12);
+    axis.controller_.mit_kp_ = mit_uint_to_float(kp_int, can_cfg.mit_kp_min, can_cfg.mit_kp_max, 12);
+    axis.controller_.mit_kd_ = mit_uint_to_float(kd_int, can_cfg.mit_kd_min, can_cfg.mit_kd_max, 12);
+    axis.controller_.mit_torque_ff_ = mit_uint_to_float(t_int, can_cfg.mit_torque_min, can_cfg.mit_torque_max, 12);
+
+    if (can_cfg.mit_reply_can_id == 0) {
+        return;
+    }
+
+    std::optional<float> pos = axis.encoder_.pos_estimate_.any();
+    std::optional<float> vel = axis.encoder_.vel_estimate_.any();
+    if (!pos.has_value() || !vel.has_value()) {
+        return;
+    }
+    float torque_measured = axis.motor_.current_control_.Iq_measured_ * axis.motor_.config_.torque_constant;
+
+    uint16_t p_rint = mit_float_to_uint(*pos, can_cfg.mit_pos_min, can_cfg.mit_pos_max, 16);
+    uint16_t v_rint = mit_float_to_uint(*vel, can_cfg.mit_vel_min, can_cfg.mit_vel_max, 12);
+    uint16_t t_rint = mit_float_to_uint(torque_measured, can_cfg.mit_torque_min, can_cfg.mit_torque_max, 12);
+
+    can_Message_t txmsg;
+    txmsg.id = can_cfg.mit_reply_can_id;
+    txmsg.isExt = can_cfg.is_extended;
+    txmsg.len = 5;
+    txmsg.buf[0] = p_rint >> 8;
+    txmsg.buf[1] = p_rint & 0xFF;
+    txmsg.buf[2] = v_rint >> 4;
+    txmsg.buf[3] = ((v_rint & 0x0F) << 4) | (t_rint >> 8);
+    txmsg.buf[4] = t_rint & 0xFF;
+    canbus_->send_message(txmsg);
 }
 
 void CANSimple::handle_can_message(const can_Message_t& msg) {
@@ -500,9 +626,20 @@ uint32_t CANSimple::service_stack() {
 
     // TODO: remove this polling loop and replace with protocol hook
     for (size_t i = 0; i < AXIS_COUNT; ++i) {
+        // BSR v3.7: both changed-checks are computed before either renew_*
+        // call runs (rather than interleaved) because both compare against
+        // the shared is_extended tracker (extended_node_ids_) - renewing
+        // the first subscription updates that tracker, which would then
+        // hide an is_extended change from the second check.
         bool node_id_changed = (axes[i].config_.can.node_id != node_ids_[i]) || (axes[i].config_.can.is_extended != extended_node_ids_[i]);
+        bool mit_changed = (axes[i].config_.can.enable_mit != mit_enabled_[i])
+                         || (axes[i].config_.can.mit_can_id != mit_can_ids_[i])
+                         || (axes[i].config_.can.is_extended != extended_node_ids_[i]);
         if (node_id_changed) {
             renew_subscription(i);
+        }
+        if (mit_changed) {
+            renew_mit_subscription(i);
         }
     }
 

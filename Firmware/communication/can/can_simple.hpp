@@ -64,6 +64,25 @@ class CANSimple {
     bool renew_subscription(size_t i);
     bool send_heartbeat(const Axis& axis);
 
+    // BSR v3.7: MIT-mode (Cheetah-style) direct CAN control - see
+    // Controller::INPUT_MODE_MIT (odrive-interface.yaml) for the control
+    // law and Axis::CANConfig_t for the per-axis wire-format config. This
+    // is a completely separate, parallel CAN subscription per axis on its
+    // own dedicated arbitration id (mit_can_id), NOT another case in
+    // do_command()'s switch - the 5-bit CANSimple command space (ids
+    // 0-31, see the enum above) is already full, and this also matches
+    // how real MIT-mode actuators are actually addressed on a bus: one CAN
+    // id IS the command, sent straight to that joint, with no further
+    // node_id/cmd_id sub-addressing.
+    struct MitCtx {
+        CANSimple* self;
+        size_t axis_num;
+    };
+    bool renew_mit_subscription(size_t i);
+    void mit_command_callback(size_t axis_num, const can_Message_t& msg);
+    static uint16_t mit_float_to_uint(float x, float x_min, float x_max, int bits);
+    static float mit_uint_to_float(uint16_t x_int, float x_min, float x_max, int bits);
+
     void handle_can_message(const can_Message_t& msg);
 
     void do_command(Axis& axis, const can_Message_t& cmd);
@@ -126,6 +145,13 @@ class CANSimple {
     // renew our filter when the node ID changes
     uint32_t node_ids_[AXIS_COUNT];
     bool extended_node_ids_[AXIS_COUNT];
+
+    // BSR v3.7: MIT-mode subscription bookkeeping (same renew-on-change
+    // pattern as node_ids_/extended_node_ids_ above).
+    MitCtx mit_ctx_[AXIS_COUNT];
+    CanBusBase::CanSubscription* mit_subscription_handles_[AXIS_COUNT] = {};
+    uint32_t mit_can_ids_[AXIS_COUNT] = {};
+    bool mit_enabled_[AXIS_COUNT] = {};
 };
 
 #endif
