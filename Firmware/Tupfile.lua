@@ -243,6 +243,7 @@ board_v3 = {
         '../../ThirdParty/FreeRTOS/Source/portable/GCC/ARM_CM4F/port.c',
         '../../Drivers/DRV8301/drv8301.cpp',
         'board.cpp',
+        'bsr_signing_keys.cpp',
         'Src/stm32f4xx_hal_timebase_TIM.c',
         'Src/tim.c',
         'Src/dma.c',
@@ -381,6 +382,21 @@ end
 
 if tup.getconfig("NO_DRM") == "true" then
     CFLAGS += '-DNO_DRM'
+end
+
+-- BSR firmware lineage lock (see docs/FIRMWARE_LINEAGE_BSR.md): which
+-- private fork, if any, this build belongs to. Leave CONFIG_BSR_PRODUCT
+-- unset/empty for the public build - it must never define BSR_PRODUCT_ID.
+bsr_products = {
+    ["edolly"] = 1,   -- E-dolly-control
+    ["khepri"] = 2,   -- flight-control-khepri-libel
+}
+bsr_product_config = tup.getconfig("BSR_PRODUCT")
+if bsr_product_config ~= "" then
+    if bsr_products[bsr_product_config] == nil then
+        error("unknown BSR_PRODUCT '"..bsr_product_config.."' (expected 'edolly' or 'khepri')")
+    end
+    CFLAGS += '-DBSR_PRODUCT_ID='..bsr_products[bsr_product_config]
 end
 
 -- debug build

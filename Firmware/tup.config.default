@@ -7,3 +7,11 @@ CONFIG_USE_LTO=false
 
 # Uncomment this to error on compilation warnings
 #CONFIG_STRICT=true
+
+# BSR firmware lineage lock - which private fork this build belongs to.
+# Leave commented out (or empty) for the public build. See
+# Firmware/docs/FIRMWARE_LINEAGE_BSR.md before ever setting this to build a
+# real release: as of this writing the lock is simulation-only (RAM, not
+# real OTP) - see that doc's "Status" section.
+#CONFIG_BSR_PRODUCT=edolly   # E-dolly-control
+#CONFIG_BSR_PRODUCT=khepri   # flight-control-khepri-libel

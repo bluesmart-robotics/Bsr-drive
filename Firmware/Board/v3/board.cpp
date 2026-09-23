@@ -15,6 +15,9 @@
 #include <usart.h>
 #include <freertos_vars.h>
 
+#include <cstring>
+#include <cstdio>
+
 // this should technically be in task_timer.cpp but let's not make a one-line file
 bool TaskTimer::enabled = false;
 
@@ -282,6 +285,151 @@ bool check_board_version(const uint8_t* otp_ptr) {
            (otp_ptr[5] == HW_VERSION_VOLTAGE);
 }
 
+// ============================================================================
+// BSR firmware lineage lock
+// ----------------------------------------------------------------------------
+// Software analogue of check_board_version() above: instead of pinning this
+// firmware to a specific *board revision*, it pins a *board instance* to a
+// specific *firmware lineage* the first time a BSR-signed private fork
+// ("E-dolly-control" or "flight-control-khepri-libel") is flashed onto it.
+// Full design, threat model and current limitations: see
+// docs/FIRMWARE_LINEAGE_BSR.md.
+//
+// *** STATUS: SIMULATION ONLY (phase 1) ***
+// This code only ever reads/writes `fake_otp` (RAM). It deliberately never
+// calls a real OTP-programming HAL function, and nothing here touches flash
+// write-protection (WRP) or read-out-protection (RDP) option bytes yet. It
+// is therefore safe to build and flash on real hardware today: on a real
+// board, `otp_lineage_burn()` below is a no-op, so nothing irreversible can
+// happen. See the doc for the phase-2 plan (real OTP burn, WRP/RDP, and
+// vendoring a real Ed25519 verifier + build-time image signing).
+//
+// OTP layout (byte offsets from FLASH_OTP_BASE), kept well clear of
+// ODrive's own fields at offsets 0, 3, 4, 5, and of the 16 block-lock bytes
+// at the very end of the 528-byte OTP area (offsets 512-527):
+//   32      : lineage magic - 0xFF = virgin (never claimed), 0x00 = claimed
+//   33      : claimed product id (see BsrProductId)
+//   34..49  : 16-byte signer key id (first 16 bytes of sha256(pubkey))
+// ============================================================================
+
+constexpr size_t kOtpLineageMagicOffset = 32;
+constexpr size_t kOtpLineageProductOffset = 33;
+constexpr size_t kOtpLineageKeyIdOffset = 34;
+constexpr size_t kOtpLineageKeyIdLen = 16;
+
+enum class BsrProductId : uint8_t {
+    E_DOLLY_CONTROL = 1,
+    FLIGHT_CONTROL_KHEPRI_LIBEL = 2,
+};
+
+enum class LineageCheckResult {
+    CLAIMED_NOW,        // board was virgin, this firmware just claimed it - ok to boot
+    OK_MATCH,           // board was already claimed by this exact firmware lineage - ok to boot
+    MISMATCH_PRODUCT,   // board is claimed by a different BSR product - must not boot
+    MISMATCH_KEY,       // board is claimed under a different signer key - must not boot
+    SIGNATURE_INVALID,  // this image's own signature doesn't check out - must not boot
+};
+
+#if defined(BSR_PRODUCT_ID)
+
+extern const uint8_t bsr_signer_public_key[32]; // defined per-fork in bsr_signing_keys.cpp
+extern const uint8_t bsr_signer_key_id[16];     // sha256(bsr_signer_public_key)[0:16]
+
+// TODO(BSR phase 2): replace with a real Ed25519 verification of the
+// signature appended to this running image against bsr_signer_public_key.
+// Needs: (1) vendoring a compact, audited verify-only Ed25519
+// implementation, (2) a linker-reserved signature slot, (3) a build-time
+// signing step that hashes/signs everything except that slot. Until then
+// this always returns true, so the lineage lock currently only protects
+// against *board/product/key* mismatches, not against a stripped-down
+// unsigned copy of this same source - see the doc's threat model section.
+bool bsr_verify_running_image_signature() {
+    return true;
+}
+
+// Only ever touches fake_otp (RAM). Burning the real, physical OTP is a
+// phase-2 task (see file header) - deliberately not implemented here so
+// this code can be merged, built and flashed on real boards with zero risk
+// while it's being reviewed and tested.
+void otp_lineage_burn_simulated(BsrProductId product, const uint8_t* key_id) {
+    fake_otp[kOtpLineageMagicOffset] = 0x00;
+    fake_otp[kOtpLineageProductOffset] = (uint8_t)product;
+    memcpy(&fake_otp[kOtpLineageKeyIdOffset], key_id, kOtpLineageKeyIdLen);
+}
+
+// Pure decision function - never loops forever itself, so it can be unit
+// tested / demoed on-target without locking up the board. Only touches OTP
+// (real or fake_otp) by delegating to otp_lineage_burn_simulated() above.
+LineageCheckResult check_firmware_lineage(const uint8_t* otp_ptr) {
+    if (!bsr_verify_running_image_signature()) {
+        return LineageCheckResult::SIGNATURE_INVALID;
+    }
+
+    if (otp_ptr[kOtpLineageMagicOffset] == 0xff) {
+        // Virgin board: this is the first BSR-signed firmware it has run.
+        if (otp_ptr == fake_otp) {
+            otp_lineage_burn_simulated((BsrProductId)BSR_PRODUCT_ID, bsr_signer_key_id);
+        }
+        // else: real silicon - phase 2 will burn the real OTP here.
+        return LineageCheckResult::CLAIMED_NOW;
+    }
+
+    if (otp_ptr[kOtpLineageProductOffset] != (uint8_t)BSR_PRODUCT_ID) {
+        return LineageCheckResult::MISMATCH_PRODUCT;
+    }
+    if (memcmp(&otp_ptr[kOtpLineageKeyIdOffset], bsr_signer_key_id, kOtpLineageKeyIdLen) != 0) {
+        return LineageCheckResult::MISMATCH_KEY;
+    }
+    return LineageCheckResult::OK_MATCH;
+}
+
+// Manual on-target smoke test, in the same spirit as NVM_demo() in
+// stm32_nvm.c: run it (e.g. temporarily called from system_init(), or from
+// the debugger) to watch the state machine work over a serial console,
+// entirely in RAM - it never touches real OTP and never actually hangs, it
+// just prints what would happen.
+void firmware_lineage_demo() {
+    printf("=== BSR firmware lineage demo (simulated OTP only) ===\r\n");
+
+    memset(fake_otp + kOtpLineageMagicOffset, 0xff, 1 + kOtpLineageKeyIdLen);
+    printf("[boot 1, virgin board] -> ");
+    switch (check_firmware_lineage(fake_otp)) {
+        case LineageCheckResult::CLAIMED_NOW: printf("CLAIMED_NOW (would boot)\r\n"); break;
+        default: printf("unexpected result\r\n"); break;
+    }
+
+    printf("[boot 2, same firmware] -> ");
+    switch (check_firmware_lineage(fake_otp)) {
+        case LineageCheckResult::OK_MATCH: printf("OK_MATCH (would boot)\r\n"); break;
+        default: printf("unexpected result\r\n"); break;
+    }
+
+    printf("[boot 3, simulate a different product id] -> ");
+    uint8_t saved_product = fake_otp[kOtpLineageProductOffset];
+    fake_otp[kOtpLineageProductOffset] = saved_product ^ 0xff;
+    switch (check_firmware_lineage(fake_otp)) {
+        case LineageCheckResult::MISMATCH_PRODUCT: printf("MISMATCH_PRODUCT (would HANG)\r\n"); break;
+        default: printf("unexpected result\r\n"); break;
+    }
+    fake_otp[kOtpLineageProductOffset] = saved_product;
+
+    printf("[boot 4, simulate a different signer key] -> ");
+    uint8_t saved_key[kOtpLineageKeyIdLen];
+    memcpy(saved_key, &fake_otp[kOtpLineageKeyIdOffset], kOtpLineageKeyIdLen);
+    fake_otp[kOtpLineageKeyIdOffset] ^= 0xff;
+    switch (check_firmware_lineage(fake_otp)) {
+        case LineageCheckResult::MISMATCH_KEY: printf("MISMATCH_KEY (would HANG)\r\n"); break;
+        default: printf("unexpected result\r\n"); break;
+    }
+    memcpy(&fake_otp[kOtpLineageKeyIdOffset], saved_key, kOtpLineageKeyIdLen);
+
+    // leave fake_otp claimed (as a real board would be after boot 1) so a
+    // reset of this demo function reflects a realistic "already claimed"
+    // starting state on the next call.
+}
+
+#endif // BSR_PRODUCT_ID
+
 void system_init() {
     // Reset of all peripherals, Initializes the Flash interface and the Systick.
     HAL_Init();
@@ -300,6 +448,22 @@ void system_init() {
     if (!check_board_version(otp_ptr)) {
         for (;;);
     }
+
+#if defined(BSR_PRODUCT_ID)
+    // BSR firmware lineage lock - simulation only for now, see the big
+    // comment above check_firmware_lineage(). Never runs at all on the
+    // public build (BSR_PRODUCT_ID undefined there), so the public
+    // firmware can never claim a board.
+    switch (check_firmware_lineage(otp_ptr)) {
+        case LineageCheckResult::CLAIMED_NOW:
+        case LineageCheckResult::OK_MATCH:
+            break;
+        case LineageCheckResult::MISMATCH_PRODUCT:
+        case LineageCheckResult::MISMATCH_KEY:
+        case LineageCheckResult::SIGNATURE_INVALID:
+            for (;;);
+    }
+#endif
 }
 
 bool board_init() {
