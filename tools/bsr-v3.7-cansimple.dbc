@@ -1,0 +1,346 @@
+VERSION "bsr-v3.7"
+
+
+NS_ : 
+	NS_DESC_
+	CM_
+	BA_DEF_
+	BA_
+	VAL_
+	CAT_DEF_
+	CAT_
+	FILTER
+	BA_DEF_DEF_
+	EV_DATA_
+	ENVVAR_DATA_
+	SGTYPE_
+	SGTYPE_VAL_
+	BA_DEF_SGTYPE_
+	BA_SGTYPE_
+	SIG_TYPE_REF_
+	VAL_TABLE_
+	SIG_GROUP_
+	SIG_VALTYPE_
+	SIGTYPE_VALTYPE_
+	BO_TX_BU_
+	BA_DEF_REL_
+	BA_REL_
+	BA_DEF_DEF_REL_
+	BU_SG_REL_
+	BU_EV_REL_
+	BU_BO_REL_
+	SG_MUL_VAL_
+
+BS_:
+
+BU_: Master BSR_Axis0 BSR_Axis1
+
+
+BO_ 0 Axis0_Heartbeat: 8 BSR_Axis0
+ SG_ Trajectory_Done_Flag : 63|1@1+ (1,0) [0|0] ""  Master
+ SG_ Controller_Error_Flag : 56|1@1+ (1,0) [0|0] ""  Master
+ SG_ Encoder_Error_Flag : 48|1@1+ (1,0) [0|0] ""  Master
+ SG_ Motor_Error_Flag : 40|1@1+ (1,0) [0|0] ""  Master
+ SG_ Axis_State : 32|8@1+ (1,0) [0|0] ""  Master
+ SG_ Axis_Error : 0|32@1+ (1,0) [0|0] ""  Master
+
+BO_ 2 Axis0_Estop: 0 Master
+
+BO_ 3 Axis0_Get_Motor_Error: 8 BSR_Axis0
+ SG_ Motor_Error : 0|32@1+ (1,0) [0|0] ""  Master
+
+BO_ 4 Axis0_Get_Encoder_Error: 8 BSR_Axis0
+ SG_ Encoder_Error : 0|32@1+ (1,0) [0|0] ""  Master
+
+BO_ 5 Axis0_Get_Sensorless_Error: 8 BSR_Axis0
+ SG_ Sensorless_Error : 0|32@1+ (1,0) [0|0] ""  Master
+
+BO_ 6 Axis0_Set_Axis_Node_ID: 8 Master
+ SG_ Axis_Node_ID : 0|32@1+ (1,0) [0|0] ""  BSR_Axis0
+
+BO_ 7 Axis0_Set_Axis_State: 8 Master
+ SG_ Axis_Requested_State : 0|32@1+ (1,0) [0|0] ""  BSR_Axis0
+
+BO_ 9 Axis0_Get_Encoder_Estimates: 8 BSR_Axis0
+ SG_ Vel_Estimate : 32|32@1+ (1,0) [0|0] "rev/s"  Master
+ SG_ Pos_Estimate : 0|32@1+ (1,0) [0|0] "rev"  Master
+
+BO_ 10 Axis0_Get_Encoder_Count: 8 BSR_Axis0
+ SG_ Count_in_CPR : 32|32@1+ (1,0) [0|0] "counts"  Master
+ SG_ Shadow_Count : 0|32@1+ (1,0) [0|0] "counts"  Master
+
+BO_ 11 Axis0_Set_Controller_Mode: 8 Master
+ SG_ Input_Mode : 32|32@1+ (1,0) [0|0] ""  BSR_Axis0
+ SG_ Control_Mode : 0|32@1+ (1,0) [0|0] ""  BSR_Axis0
+
+BO_ 12 Axis0_Set_Input_Pos: 8 Master
+ SG_ Torque_FF : 48|16@1- (0.001,0) [0|0] "Nm"  BSR_Axis0
+ SG_ Vel_FF : 32|16@1- (0.001,0) [0|0] "rev/s"  BSR_Axis0
+ SG_ Input_Pos : 0|32@1+ (1,0) [0|0] "rev"  BSR_Axis0
+
+BO_ 13 Axis0_Set_Input_Vel: 8 Master
+ SG_ Input_Torque_FF : 32|32@1+ (1,0) [0|0] "Nm"  BSR_Axis0
+ SG_ Input_Vel : 0|32@1+ (1,0) [0|0] "rev/s"  BSR_Axis0
+
+BO_ 14 Axis0_Set_Input_Torque: 8 Master
+ SG_ Input_Torque : 0|32@1+ (1,0) [0|0] "Nm"  BSR_Axis0
+
+BO_ 15 Axis0_Set_Limits: 8 Master
+ SG_ Current_Limit : 32|32@1+ (1,0) [0|0] "A"  BSR_Axis0
+ SG_ Velocity_Limit : 0|32@1+ (1,0) [0|0] "rev/s"  BSR_Axis0
+
+BO_ 16 Axis0_Start_Anticogging: 0 Master
+
+BO_ 17 Axis0_Set_Traj_Vel_Limit: 8 Master
+ SG_ Traj_Vel_Limit : 0|32@1+ (1,0) [0|0] "rev/s"  BSR_Axis0
+
+BO_ 18 Axis0_Set_Traj_Accel_Limits: 8 Master
+ SG_ Traj_Decel_Limit : 32|32@1+ (1,0) [0|0] "rev/s^2"  BSR_Axis0
+ SG_ Traj_Accel_Limit : 0|32@1+ (1,0) [0|0] "rev/s^2"  BSR_Axis0
+
+BO_ 19 Axis0_Set_Traj_Inertia: 8 Master
+ SG_ Traj_Inertia : 0|32@1+ (1,0) [0|0] "Nm / (rev/s^2)"  BSR_Axis0
+
+BO_ 20 Axis0_Get_Iq: 8 BSR_Axis0
+ SG_ Iq_Measured : 32|32@1+ (1,0) [0|0] "A"  Master
+ SG_ Iq_Setpoint : 0|32@1+ (1,0) [0|0] "A"  Master
+
+BO_ 21 Axis0_Get_Sensorless_Estimates: 8 BSR_Axis0
+ SG_ Sensorless_Vel_Estimate : 32|32@1+ (1,0) [0|0] "rev/s"  Master
+ SG_ Sensorless_Pos_Estimate : 0|32@1+ (1,0) [0|0] "rev"  Master
+
+BO_ 22 Axis0_Reboot: 0 Master
+
+BO_ 23 Axis0_Get_Bus_Voltage: 8 BSR_Axis0
+ SG_ Bus_Voltage : 0|32@1+ (1,0) [0|0] "V"  Master
+
+BO_ 24 Axis0_Clear_Errors: 0 Master
+
+BO_ 25 Axis0_Set_Linear_Count: 8 Master
+ SG_ Position : 0|32@1- (1,0) [0|0] "counts"  BSR_Axis0
+
+BO_ 26 Axis0_Set_Pos_Gain: 8 Master
+ SG_ Pos_Gain : 0|32@1+ (1,0) [0|0] "(rev/s) / rev"  BSR_Axis0
+
+BO_ 27 Axis0_Set_Vel_Gains: 8 Master
+ SG_ Vel_Integrator_Gain : 32|32@1+ (1,0) [0|0] "(Nm / (rev/s)) / s"  BSR_Axis0
+ SG_ Vel_Gain : 0|32@1+ (1,0) [0|0] "Nm / (rev/s)"  BSR_Axis0
+
+BO_ 28 Axis0_Get_ADC_Voltage: 8 BSR_Axis0
+ SG_ ADC_Voltage : 0|32@1+ (1,0) [0|0] "V"  Master
+
+BO_ 29 Axis0_Get_Controller_Error: 8 BSR_Axis0
+ SG_ Controller_Error : 0|32@1+ (1,0) [0|0] ""  Master
+
+BO_ 30 Axis0_Set_PWRGD_Check_Enable: 1 Master
+ SG_ Enable : 0|8@1+ (1,0) [0|0] ""  BSR_Axis0
+
+BO_ 31 Axis0_CAN_Endpoint_Op: 8 Master
+ SG_ Value : 16|48@1+ (1,0) [0|0] ""  BSR_Axis0,Master
+ SG_ Endpoint_ID : 0|16@1+ (1,0) [0|0] ""  BSR_Axis0,Master
+
+BO_ 32 Axis1_Heartbeat: 8 BSR_Axis1
+ SG_ Trajectory_Done_Flag : 63|1@1+ (1,0) [0|0] ""  Master
+ SG_ Controller_Error_Flag : 56|1@1+ (1,0) [0|0] ""  Master
+ SG_ Encoder_Error_Flag : 48|1@1+ (1,0) [0|0] ""  Master
+ SG_ Motor_Error_Flag : 40|1@1+ (1,0) [0|0] ""  Master
+ SG_ Axis_State : 32|8@1+ (1,0) [0|0] ""  Master
+ SG_ Axis_Error : 0|32@1+ (1,0) [0|0] ""  Master
+
+BO_ 34 Axis1_Estop: 0 Master
+
+BO_ 35 Axis1_Get_Motor_Error: 8 BSR_Axis1
+ SG_ Motor_Error : 0|32@1+ (1,0) [0|0] ""  Master
+
+BO_ 36 Axis1_Get_Encoder_Error: 8 BSR_Axis1
+ SG_ Encoder_Error : 0|32@1+ (1,0) [0|0] ""  Master
+
+BO_ 37 Axis1_Get_Sensorless_Error: 8 BSR_Axis1
+ SG_ Sensorless_Error : 0|32@1+ (1,0) [0|0] ""  Master
+
+BO_ 38 Axis1_Set_Axis_Node_ID: 8 Master
+ SG_ Axis_Node_ID : 0|32@1+ (1,0) [0|0] ""  BSR_Axis1
+
+BO_ 39 Axis1_Set_Axis_State: 8 Master
+ SG_ Axis_Requested_State : 0|32@1+ (1,0) [0|0] ""  BSR_Axis1
+
+BO_ 41 Axis1_Get_Encoder_Estimates: 8 BSR_Axis1
+ SG_ Vel_Estimate : 32|32@1+ (1,0) [0|0] "rev/s"  Master
+ SG_ Pos_Estimate : 0|32@1+ (1,0) [0|0] "rev"  Master
+
+BO_ 42 Axis1_Get_Encoder_Count: 8 BSR_Axis1
+ SG_ Count_in_CPR : 32|32@1+ (1,0) [0|0] "counts"  Master
+ SG_ Shadow_Count : 0|32@1+ (1,0) [0|0] "counts"  Master
+
+BO_ 43 Axis1_Set_Controller_Mode: 8 Master
+ SG_ Input_Mode : 32|32@1+ (1,0) [0|0] ""  BSR_Axis1
+ SG_ Control_Mode : 0|32@1+ (1,0) [0|0] ""  BSR_Axis1
+
+BO_ 44 Axis1_Set_Input_Pos: 8 Master
+ SG_ Torque_FF : 48|16@1- (0.001,0) [0|0] "Nm"  BSR_Axis1
+ SG_ Vel_FF : 32|16@1- (0.001,0) [0|0] "rev/s"  BSR_Axis1
+ SG_ Input_Pos : 0|32@1+ (1,0) [0|0] "rev"  BSR_Axis1
+
+BO_ 45 Axis1_Set_Input_Vel: 8 Master
+ SG_ Input_Torque_FF : 32|32@1+ (1,0) [0|0] "Nm"  BSR_Axis1
+ SG_ Input_Vel : 0|32@1+ (1,0) [0|0] "rev/s"  BSR_Axis1
+
+BO_ 46 Axis1_Set_Input_Torque: 8 Master
+ SG_ Input_Torque : 0|32@1+ (1,0) [0|0] "Nm"  BSR_Axis1
+
+BO_ 47 Axis1_Set_Limits: 8 Master
+ SG_ Current_Limit : 32|32@1+ (1,0) [0|0] "A"  BSR_Axis1
+ SG_ Velocity_Limit : 0|32@1+ (1,0) [0|0] "rev/s"  BSR_Axis1
+
+BO_ 48 Axis1_Start_Anticogging: 0 Master
+
+BO_ 49 Axis1_Set_Traj_Vel_Limit: 8 Master
+ SG_ Traj_Vel_Limit : 0|32@1+ (1,0) [0|0] "rev/s"  BSR_Axis1
+
+BO_ 50 Axis1_Set_Traj_Accel_Limits: 8 Master
+ SG_ Traj_Decel_Limit : 32|32@1+ (1,0) [0|0] "rev/s^2"  BSR_Axis1
+ SG_ Traj_Accel_Limit : 0|32@1+ (1,0) [0|0] "rev/s^2"  BSR_Axis1
+
+BO_ 51 Axis1_Set_Traj_Inertia: 8 Master
+ SG_ Traj_Inertia : 0|32@1+ (1,0) [0|0] "Nm / (rev/s^2)"  BSR_Axis1
+
+BO_ 52 Axis1_Get_Iq: 8 BSR_Axis1
+ SG_ Iq_Measured : 32|32@1+ (1,0) [0|0] "A"  Master
+ SG_ Iq_Setpoint : 0|32@1+ (1,0) [0|0] "A"  Master
+
+BO_ 53 Axis1_Get_Sensorless_Estimates: 8 BSR_Axis1
+ SG_ Sensorless_Vel_Estimate : 32|32@1+ (1,0) [0|0] "rev/s"  Master
+ SG_ Sensorless_Pos_Estimate : 0|32@1+ (1,0) [0|0] "rev"  Master
+
+BO_ 54 Axis1_Reboot: 0 Master
+
+BO_ 55 Axis1_Get_Bus_Voltage: 8 BSR_Axis1
+ SG_ Bus_Voltage : 0|32@1+ (1,0) [0|0] "V"  Master
+
+BO_ 56 Axis1_Clear_Errors: 0 Master
+
+BO_ 57 Axis1_Set_Linear_Count: 8 Master
+ SG_ Position : 0|32@1- (1,0) [0|0] "counts"  BSR_Axis1
+
+BO_ 58 Axis1_Set_Pos_Gain: 8 Master
+ SG_ Pos_Gain : 0|32@1+ (1,0) [0|0] "(rev/s) / rev"  BSR_Axis1
+
+BO_ 59 Axis1_Set_Vel_Gains: 8 Master
+ SG_ Vel_Integrator_Gain : 32|32@1+ (1,0) [0|0] "(Nm / (rev/s)) / s"  BSR_Axis1
+ SG_ Vel_Gain : 0|32@1+ (1,0) [0|0] "Nm / (rev/s)"  BSR_Axis1
+
+BO_ 60 Axis1_Get_ADC_Voltage: 8 BSR_Axis1
+ SG_ ADC_Voltage : 0|32@1+ (1,0) [0|0] "V"  Master
+
+BO_ 61 Axis1_Get_Controller_Error: 8 BSR_Axis1
+ SG_ Controller_Error : 0|32@1+ (1,0) [0|0] ""  Master
+
+BO_ 62 Axis1_Set_PWRGD_Check_Enable: 1 Master
+ SG_ Enable : 0|8@1+ (1,0) [0|0] ""  BSR_Axis1
+
+BO_ 63 Axis1_CAN_Endpoint_Op: 8 Master
+ SG_ Value : 16|48@1+ (1,0) [0|0] ""  BSR_Axis1,Master
+ SG_ Endpoint_ID : 0|16@1+ (1,0) [0|0] ""  BSR_Axis1,Master
+
+BO_ 1040 Axis1_MIT_Command: 8 Master
+ SG_ Torque_FF_Raw : 51|12@0+ (1,0) [0|0] ""  BSR_Axis1
+ SG_ Kd_Raw : 47|12@0+ (1,0) [0|0] ""  BSR_Axis1
+ SG_ Kp_Raw : 27|12@0+ (1,0) [0|0] ""  BSR_Axis1
+ SG_ Vel_Des_Raw : 23|12@0+ (1,0) [0|0] ""  BSR_Axis1
+ SG_ Pos_Des_Raw : 7|16@0+ (1,0) [0|0] ""  BSR_Axis1
+
+BO_ 1041 Axis1_MIT_Reply: 5 BSR_Axis1
+ SG_ Torque_Meas_Raw : 27|12@0+ (1,0) [0|0] ""  Master
+ SG_ Vel_Meas_Raw : 23|12@0+ (1,0) [0|0] ""  Master
+ SG_ Pos_Meas_Raw : 7|16@0+ (1,0) [0|0] ""  Master
+
+BO_TX_BU_ 31 : Master,BSR_Axis0;
+BO_TX_BU_ 63 : Master,BSR_Axis1;
+
+
+CM_ BO_ 0 "Also pushed immediately on any axis.error_ change (BSR v3.7), not just on the heartbeat_rate_ms timer.";
+CM_ BO_ 28 "Request (Master->axis) is 1 byte: GPIO_Num (uint8) at byte 0. Response (shown here) is the ADC voltage reading.";
+CM_ BO_ 30 "BSR v3.7 custom. Nonzero enables the DRV8301 PWRGD gate-driver-fault check for this axis.";
+CM_ BO_ 31 "BSR v3.7 custom, request AND response share this id/layout. Generic read/write of any Fibre property or function by its numeric endpoint id (same ids USB/UART use) - see CANSimple::endpoint_op_callback() in can_simple.cpp. The 'Value' field's actual meaning depends entirely on which endpoint id is addressed and cannot be described generically here; empty (2-byte message) = read, present = write-then-read-back. 64-bit endpoints don't fit and are not reachable this way.";
+CM_ BO_ 32 "Also pushed immediately on any axis.error_ change (BSR v3.7), not just on the heartbeat_rate_ms timer.";
+CM_ BO_ 60 "Request (Master->axis) is 1 byte: GPIO_Num (uint8) at byte 0. Response (shown here) is the ADC voltage reading.";
+CM_ BO_ 62 "BSR v3.7 custom. Nonzero enables the DRV8301 PWRGD gate-driver-fault check for this axis.";
+CM_ BO_ 63 "BSR v3.7 custom, request AND response share this id/layout. Generic read/write of any Fibre property or function by its numeric endpoint id (same ids USB/UART use) - see CANSimple::endpoint_op_callback() in can_simple.cpp. The 'Value' field's actual meaning depends entirely on which endpoint id is addressed and cannot be described generically here; empty (2-byte message) = read, present = write-then-read-back. 64-bit endpoints don't fit and are not reachable this way.";
+CM_ BO_ 1040 "BSR v3.7 custom MIT-mode command frame - NOT part of the node_id<<5|cmd_id scheme, this is its own dedicated arbitration id (Axis.config.can.mit_can_id). Raw values are packed 16/12/12/12/12-bit fixed point; decode with the ranges configured in Axis.config.can.mit_*_min/max (see Firmware/docs/MIT_MODE_BSR.md). Standard cantools scaling can't express 'range depends on runtime config', so this DBC only documents bit positions/widths, not physical units - decode the raw ints and apply the ODrive-side range yourself (or read them back over USB/UART/CAN-endpoint-op to confirm).";
+CM_ SG_ 1040 Torque_FF_Raw "12-bit fixed point over [mit_torque_min, mit_torque_max]";
+CM_ SG_ 1040 Kd_Raw "12-bit fixed point over [mit_kd_min, mit_kd_max]";
+CM_ SG_ 1040 Kp_Raw "12-bit fixed point over [mit_kp_min, mit_kp_max]";
+CM_ SG_ 1040 Vel_Des_Raw "12-bit fixed point over [mit_vel_min, mit_vel_max]";
+CM_ SG_ 1040 Pos_Des_Raw "16-bit fixed point over [mit_pos_min, mit_pos_max] - see MIT_MODE_BSR.md";
+CM_ BO_ 1041 "BSR v3.7 custom MIT-mode reply frame, sent on Axis.config.can.mit_reply_can_id after each command.";
+BA_DEF_ BO_  "GenMsgCycleTime" INT 0 65535;
+BA_DEF_  "Baudrate" INT 0 10485760;
+BA_DEF_DEF_  "GenMsgCycleTime" 0;
+BA_DEF_DEF_  "Baudrate" 125000;
+BA_ "Baudrate" 250000;
+BA_ "GenMsgCycleTime" BO_ 0 100;
+BA_ "GenMsgCycleTime" BO_ 9 10;
+BA_ "GenMsgCycleTime" BO_ 32 100;
+BA_ "GenMsgCycleTime" BO_ 41 10;
+VAL_ 0 Axis_State 0 "UNDEFINED" 1 "IDLE" 2 "STARTUP_SEQUENCE" 3 "FULL_CALIBRATION_SEQUENCE" 4 "MOTOR_CALIBRATION" 6 "ENCODER_INDEX_SEARCH" 7 "ENCODER_OFFSET_CALIBRATION" 8 "CLOSED_LOOP_CONTROL" 9 "LOCKIN_SPIN" 10 "ENCODER_DIR_FIND" 11 "HOMING" 12 "ENCODER_HALL_POLARITY_CALIBRATION" 13 "ENCODER_HALL_PHASE_CALIBRATION" ;
+VAL_ 0 Axis_Error 0 "NONE" 1 "INVALID_STATE" 64 "MOTOR_FAILED" 128 "SENSORLESS_ESTIMATOR_FAILED" 256 "ENCODER_FAILED" 512 "CONTROLLER_FAILED" 2048 "WATCHDOG_TIMER_EXPIRED" 4096 "MIN_ENDSTOP_PRESSED" 8192 "MAX_ENDSTOP_PRESSED" 16384 "ESTOP_REQUESTED" 131072 "HOMING_WITHOUT_ENDSTOP" 262144 "OVER_TEMP" 524288 "UNKNOWN_POSITION" ;
+VAL_ 3 Motor_Error 0 "NONE" 1 "PHASE_RESISTANCE_OUT_OF_RANGE" 2 "PHASE_INDUCTANCE_OUT_OF_RANGE" 8 "DRV_FAULT" 16 "CONTROL_DEADLINE_MISSED" 128 "MODULATION_MAGNITUDE" 1024 "CURRENT_SENSE_SATURATION" 4096 "CURRENT_LIMIT_VIOLATION" 65536 "MODULATION_IS_NAN" 131072 "MOTOR_THERMISTOR_OVER_TEMP" 262144 "FET_THERMISTOR_OVER_TEMP" 524288 "TIMER_UPDATE_MISSED" 1048576 "CURRENT_MEASUREMENT_UNAVAILABLE" 2097152 "CONTROLLER_FAILED" 4194304 "I_BUS_OUT_OF_RANGE" 8388608 "BRAKE_RESISTOR_DISARMED" 16777216 "SYSTEM_LEVEL" 33554432 "BAD_TIMING" 67108864 "UNKNOWN_PHASE_ESTIMATE" 134217728 "UNKNOWN_PHASE_VEL" 268435456 "UNKNOWN_TORQUE" 536870912 "UNKNOWN_CURRENT_COMMAND" 1073741824 "UNKNOWN_CURRENT_MEASUREMENT" 2147483648 "UNKNOWN_VBUS_VOLTAGE" ;
+VAL_ 4 Encoder_Error 0 "NONE" 1 "UNSTABLE_GAIN" 2 "CPR_POLEPAIRS_MISMATCH" 4 "NO_RESPONSE" 8 "UNSUPPORTED_ENCODER_MODE" 16 "ILLEGAL_HALL_STATE" 32 "INDEX_NOT_FOUND_YET" 64 "ABS_SPI_TIMEOUT" 128 "ABS_SPI_COM_FAIL" 256 "ABS_SPI_NOT_READY" 512 "HALL_NOT_CALIBRATED_YET" ;
+VAL_ 5 Sensorless_Error 0 "NONE" 1 "UNSTABLE_GAIN" 2 "UNKNOWN_CURRENT_MEASUREMENT" ;
+VAL_ 7 Axis_Requested_State 0 "UNDEFINED" 1 "IDLE" 2 "STARTUP_SEQUENCE" 3 "FULL_CALIBRATION_SEQUENCE" 4 "MOTOR_CALIBRATION" 6 "ENCODER_INDEX_SEARCH" 7 "ENCODER_OFFSET_CALIBRATION" 8 "CLOSED_LOOP_CONTROL" 9 "LOCKIN_SPIN" 10 "ENCODER_DIR_FIND" 11 "HOMING" 12 "ENCODER_HALL_POLARITY_CALIBRATION" 13 "ENCODER_HALL_PHASE_CALIBRATION" ;
+VAL_ 11 Input_Mode 0 "INACTIVE" 1 "PASSTHROUGH" 2 "VEL_RAMP" 3 "POS_FILTER" 4 "MIX_CHANNELS" 5 "TRAP_TRAJ" 6 "TORQUE_RAMP" 7 "MIRROR" 8 "TUNING" 9 "MIT" ;
+VAL_ 11 Control_Mode 0 "VOLTAGE_CONTROL" 1 "TORQUE_CONTROL" 2 "VELOCITY_CONTROL" 3 "POSITION_CONTROL" ;
+VAL_ 29 Controller_Error 0 "NONE" 1 "OVERSPEED" 2 "INVALID_INPUT_MODE" 4 "UNSTABLE_GAIN" 8 "INVALID_MIRROR_AXIS" 16 "INVALID_LOAD_ENCODER" 32 "INVALID_ESTIMATE" 64 "INVALID_CIRCULAR_RANGE" 128 "SPINOUT_DETECTED" ;
+VAL_ 32 Axis_State 0 "UNDEFINED" 1 "IDLE" 2 "STARTUP_SEQUENCE" 3 "FULL_CALIBRATION_SEQUENCE" 4 "MOTOR_CALIBRATION" 6 "ENCODER_INDEX_SEARCH" 7 "ENCODER_OFFSET_CALIBRATION" 8 "CLOSED_LOOP_CONTROL" 9 "LOCKIN_SPIN" 10 "ENCODER_DIR_FIND" 11 "HOMING" 12 "ENCODER_HALL_POLARITY_CALIBRATION" 13 "ENCODER_HALL_PHASE_CALIBRATION" ;
+VAL_ 32 Axis_Error 0 "NONE" 1 "INVALID_STATE" 64 "MOTOR_FAILED" 128 "SENSORLESS_ESTIMATOR_FAILED" 256 "ENCODER_FAILED" 512 "CONTROLLER_FAILED" 2048 "WATCHDOG_TIMER_EXPIRED" 4096 "MIN_ENDSTOP_PRESSED" 8192 "MAX_ENDSTOP_PRESSED" 16384 "ESTOP_REQUESTED" 131072 "HOMING_WITHOUT_ENDSTOP" 262144 "OVER_TEMP" 524288 "UNKNOWN_POSITION" ;
+VAL_ 35 Motor_Error 0 "NONE" 1 "PHASE_RESISTANCE_OUT_OF_RANGE" 2 "PHASE_INDUCTANCE_OUT_OF_RANGE" 8 "DRV_FAULT" 16 "CONTROL_DEADLINE_MISSED" 128 "MODULATION_MAGNITUDE" 1024 "CURRENT_SENSE_SATURATION" 4096 "CURRENT_LIMIT_VIOLATION" 65536 "MODULATION_IS_NAN" 131072 "MOTOR_THERMISTOR_OVER_TEMP" 262144 "FET_THERMISTOR_OVER_TEMP" 524288 "TIMER_UPDATE_MISSED" 1048576 "CURRENT_MEASUREMENT_UNAVAILABLE" 2097152 "CONTROLLER_FAILED" 4194304 "I_BUS_OUT_OF_RANGE" 8388608 "BRAKE_RESISTOR_DISARMED" 16777216 "SYSTEM_LEVEL" 33554432 "BAD_TIMING" 67108864 "UNKNOWN_PHASE_ESTIMATE" 134217728 "UNKNOWN_PHASE_VEL" 268435456 "UNKNOWN_TORQUE" 536870912 "UNKNOWN_CURRENT_COMMAND" 1073741824 "UNKNOWN_CURRENT_MEASUREMENT" 2147483648 "UNKNOWN_VBUS_VOLTAGE" ;
+VAL_ 36 Encoder_Error 0 "NONE" 1 "UNSTABLE_GAIN" 2 "CPR_POLEPAIRS_MISMATCH" 4 "NO_RESPONSE" 8 "UNSUPPORTED_ENCODER_MODE" 16 "ILLEGAL_HALL_STATE" 32 "INDEX_NOT_FOUND_YET" 64 "ABS_SPI_TIMEOUT" 128 "ABS_SPI_COM_FAIL" 256 "ABS_SPI_NOT_READY" 512 "HALL_NOT_CALIBRATED_YET" ;
+VAL_ 37 Sensorless_Error 0 "NONE" 1 "UNSTABLE_GAIN" 2 "UNKNOWN_CURRENT_MEASUREMENT" ;
+VAL_ 39 Axis_Requested_State 0 "UNDEFINED" 1 "IDLE" 2 "STARTUP_SEQUENCE" 3 "FULL_CALIBRATION_SEQUENCE" 4 "MOTOR_CALIBRATION" 6 "ENCODER_INDEX_SEARCH" 7 "ENCODER_OFFSET_CALIBRATION" 8 "CLOSED_LOOP_CONTROL" 9 "LOCKIN_SPIN" 10 "ENCODER_DIR_FIND" 11 "HOMING" 12 "ENCODER_HALL_POLARITY_CALIBRATION" 13 "ENCODER_HALL_PHASE_CALIBRATION" ;
+VAL_ 43 Input_Mode 0 "INACTIVE" 1 "PASSTHROUGH" 2 "VEL_RAMP" 3 "POS_FILTER" 4 "MIX_CHANNELS" 5 "TRAP_TRAJ" 6 "TORQUE_RAMP" 7 "MIRROR" 8 "TUNING" 9 "MIT" ;
+VAL_ 43 Control_Mode 0 "VOLTAGE_CONTROL" 1 "TORQUE_CONTROL" 2 "VELOCITY_CONTROL" 3 "POSITION_CONTROL" ;
+VAL_ 61 Controller_Error 0 "NONE" 1 "OVERSPEED" 2 "INVALID_INPUT_MODE" 4 "UNSTABLE_GAIN" 8 "INVALID_MIRROR_AXIS" 16 "INVALID_LOAD_ENCODER" 32 "INVALID_ESTIMATE" 64 "INVALID_CIRCULAR_RANGE" 128 "SPINOUT_DETECTED" ;
+SIG_VALTYPE_ 9 Pos_Estimate : 1;
+SIG_VALTYPE_ 9 Vel_Estimate : 1;
+SIG_VALTYPE_ 12 Input_Pos : 1;
+SIG_VALTYPE_ 13 Input_Vel : 1;
+SIG_VALTYPE_ 13 Input_Torque_FF : 1;
+SIG_VALTYPE_ 14 Input_Torque : 1;
+SIG_VALTYPE_ 15 Velocity_Limit : 1;
+SIG_VALTYPE_ 15 Current_Limit : 1;
+SIG_VALTYPE_ 17 Traj_Vel_Limit : 1;
+SIG_VALTYPE_ 18 Traj_Accel_Limit : 1;
+SIG_VALTYPE_ 18 Traj_Decel_Limit : 1;
+SIG_VALTYPE_ 19 Traj_Inertia : 1;
+SIG_VALTYPE_ 20 Iq_Setpoint : 1;
+SIG_VALTYPE_ 20 Iq_Measured : 1;
+SIG_VALTYPE_ 21 Sensorless_Pos_Estimate : 1;
+SIG_VALTYPE_ 21 Sensorless_Vel_Estimate : 1;
+SIG_VALTYPE_ 23 Bus_Voltage : 1;
+SIG_VALTYPE_ 26 Pos_Gain : 1;
+SIG_VALTYPE_ 27 Vel_Gain : 1;
+SIG_VALTYPE_ 27 Vel_Integrator_Gain : 1;
+SIG_VALTYPE_ 28 ADC_Voltage : 1;
+SIG_VALTYPE_ 41 Pos_Estimate : 1;
+SIG_VALTYPE_ 41 Vel_Estimate : 1;
+SIG_VALTYPE_ 44 Input_Pos : 1;
+SIG_VALTYPE_ 45 Input_Vel : 1;
+SIG_VALTYPE_ 45 Input_Torque_FF : 1;
+SIG_VALTYPE_ 46 Input_Torque : 1;
+SIG_VALTYPE_ 47 Velocity_Limit : 1;
+SIG_VALTYPE_ 47 Current_Limit : 1;
+SIG_VALTYPE_ 49 Traj_Vel_Limit : 1;
+SIG_VALTYPE_ 50 Traj_Accel_Limit : 1;
+SIG_VALTYPE_ 50 Traj_Decel_Limit : 1;
+SIG_VALTYPE_ 51 Traj_Inertia : 1;
+SIG_VALTYPE_ 52 Iq_Setpoint : 1;
+SIG_VALTYPE_ 52 Iq_Measured : 1;
+SIG_VALTYPE_ 53 Sensorless_Pos_Estimate : 1;
+SIG_VALTYPE_ 53 Sensorless_Vel_Estimate : 1;
+SIG_VALTYPE_ 55 Bus_Voltage : 1;
+SIG_VALTYPE_ 58 Pos_Gain : 1;
+SIG_VALTYPE_ 59 Vel_Gain : 1;
+SIG_VALTYPE_ 59 Vel_Integrator_Gain : 1;
+SIG_VALTYPE_ 60 ADC_Voltage : 1;
+
+
