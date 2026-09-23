@@ -142,6 +142,32 @@ layouts from the firmware source or `MIT_MODE_BSR.md`. The MIT-mode
 signal bit positions were verified by round-tripping `cantools`'
 encode/decode against the exact reference packing code in that doc.
 
+## 10. `d7f5c370` - Add BSR firmware lineage lock (simulation phase)
+
+Added the OTP-based mechanism that lets a board "claim" itself to a BSR
+private firmware fork (E-dolly-control or flight-control-khepri-libel) the
+first time such a fork boots on it, and refuse (hang, same idiom as
+`check_board_version()`) any later boot with a different product, a
+different signer key, or the public firmware - so a board can't be
+reflashed via the standard DFU/USB tools to bypass restrictions or be
+swapped between products. Uses the same OTP area as ODrive's own
+"genuine board" check, at offsets that never collide with it.
+
+Deliberately simulation-only: `otp_lineage_burn_simulated()` only ever
+writes `fake_otp` (RAM), the signature check is a stub returning `true`,
+and no flash write-protection (WRP) or read-protection (RDP) option bytes
+are touched - so this is safe to build and flash on real hardware today,
+but does not yet lock anything for real. Generated one Ed25519 keypair per
+fork; only the public halves are in `bsr_signing_keys.cpp`, the private
+keys were delivered separately and must never be committed anywhere.
+
+See `Firmware/docs/FIRMWARE_LINEAGE_BSR.md` for the full design, the
+phase-2 TODO (real OTP burn, real Ed25519 verification, WRP+RDP), and an
+explicit statement of what this does and doesn't defend against (no
+secure boot on the STM32F405 - a JTAG/SWD attacker with a full mass-erase
+is out of scope without adding a hardware secure element on a future
+board revision).
+
 ---
 
 ## When pushing to GitHub
