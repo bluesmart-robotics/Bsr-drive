@@ -214,6 +214,35 @@ hand instead (brace/structure balance, call-site consistency, layout grid
 math); build on a normal machine per `community-gui-winforms/README.md`
 before relying on it.
 
+## 12. Add community Web GUI (BSR v3.7 fork) at `community-gui-web/`
+
+Forked [MoonLighTingPY's odrive3.6_web_gui](https://github.com/MoonLighTingPY/odrive3.6_web_gui)
+(Python/Flask backend + React/Vite/Chakra UI frontend, built-in mock
+device, config wizard, Inspector, live charts) with the author's direct
+permission - contacted and confirmed via Telegram. **License terms for
+this fork are still being finalized with him**; see
+`community-gui-web/BSR_V3.7_CHANGES.md` for the current status and full
+technical detail.
+
+Adds, on top of the shared 0.5.x API reference both the backend and
+frontend read from: PWRGD gate-driver monitoring
+(`axis{n}.motor.config.enable_pwrgd_check`); MIT-mode (Cheetah-style)
+direct CAN joint control - 12 config fields under `axis{n}.config.can.*`
+plus a new `INPUT_MODE_MIT` enum value, and 5 live setpoint fields under
+`axis{n}.controller.*`; and CAN bus health telemetry
+(`can.tx_error_count`, `can.rx_error_count`, `can.is_bus_off`). Also fixed
+the mock device's simulated firmware revision (was a placeholder `6`, now
+`5` to match BSR v3.7's upstream base fw-v0.5.5).
+
+Unlike item 11 (blocked from compiling by this sandbox's network policy),
+this fork's tooling isn't blocked - PyPI and npm both work here - so it
+was verified for real: the Flask server was run in mock mode and
+exercised over its actual WebSocket read/write protocol (not just
+inspected), the existing frontend test suite (40 vitest tests) still
+passes with zero regressions, eslint is clean on every file touched, and
+the production Vite build succeeds. This is now the recommended community
+GUI; the WinForms fork (item 11) is kept as a lighter-weight fallback.
+
 ---
 
 ## When pushing to GitHub

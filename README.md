@@ -17,8 +17,15 @@ Please refer to the [Developer Guide](https://docs.odriverobotics.com/v/latest/d
  * **tools**: Python library & tools
  * **docs**: Documentation
  * **GUI**: Official web-based configuration GUI (Electron/Vue)
- * **community-gui-winforms**: Community Windows GUI (BSR v3.7 fork of
-   [Stijn Carelsbergh's ODrive V3 GUI](https://github.com/stijnsprojects/ODrive-V3-GUI),
+ * **community-gui-web**: **Recommended** community GUI (BSR v3.7 fork of
+   [MoonLighTingPY's odrive3.6_web_gui](https://github.com/MoonLighTingPY/odrive3.6_web_gui),
+   forked with the author's direct permission, license terms still being
+   finalized with him) — Python/Flask + React, adds PWRGD, MIT-mode CAN
+   control and CAN health, built-in mock device; verified end-to-end
+   (real server + WebSocket protocol, tests, build). See its own README
+   and `BSR_V3.7_CHANGES.md` for details.
+ * **community-gui-winforms**: Lighter-weight fallback Windows GUI (BSR
+   v3.7 fork of [Stijn Carelsbergh's ODrive V3 GUI](https://github.com/stijnsprojects/ODrive-V3-GUI),
    CC BY-NC-SA 4.0) — adds PWRGD, MIT-mode CAN control, CAN health and a
    hardware-free demo mode; see its own README for details
 
