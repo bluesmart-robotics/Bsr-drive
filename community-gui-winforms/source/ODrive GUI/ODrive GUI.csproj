@@ -1,0 +1,40 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>WinExe</OutputType>
+    <TargetFramework>net8.0-windows</TargetFramework>
+    <RootNamespace>ODrive_GUI</RootNamespace>
+    <Nullable>enable</Nullable>
+    <UseWindowsForms>true</UseWindowsForms>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <ApplicationIcon>odrive white.ico</ApplicationIcon>
+    <Company>Stijns Projects / Blue Smart Robotics (BSR v3.7 fork)</Company>
+    <Copyright>© 2025 Stijns Projects, © 2026 Blue Smart Robotics (fork)</Copyright>
+    <PackageLicenseExpression>CC-BY-NC-SA-4.0</PackageLicenseExpression>
+    <PackageRequireLicenseAcceptance>False</PackageRequireLicenseAcceptance>
+    <Authors>Stijn Carelsbergh (original); Blue Smart Robotics (BSR v3.7 fork)</Authors>
+    <Title>ODrive GUI - BSR v3.7 fork</Title>
+    <Description>GUI to configure V3.X ODrive-compatible motor drivers, extended for the BSR v3.7 open-source firmware fork (PWRGD, MIT-mode CAN control, CAN bus health, demo mode).</Description>
+    <RepositoryUrl>https://github.com/stijnsprojects/ODrive-V3-GUI</RepositoryUrl>
+    <PackageTags>ODrive; GUI; BSR</PackageTags>
+    <AssemblyName>ODrive V3 GUI</AssemblyName>
+  </PropertyGroup>
+
+  <!--
+    BSR v3.7: the upstream .csproj also embedded "..\..\odrive border.png"
+    as a NuGet package icon, but that file isn't actually present anywhere
+    in the upstream repository (checked its full git history) - referencing
+    it made `dotnet build`/`dotnet pack` fail for anyone with a missing-file
+    error. Dropped PackageIcon and that EmbeddedResource block; the window/
+    taskbar icon (odrive white.ico, below) is unaffected and unchanged.
+  -->
+  <ItemGroup>
+    <EmbeddedResource Include="odrive white.ico" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="System.IO.Ports" Version="9.0.6" />
+    <PackageReference Include="System.Management" Version="9.0.6" />
+  </ItemGroup>
+
+</Project>

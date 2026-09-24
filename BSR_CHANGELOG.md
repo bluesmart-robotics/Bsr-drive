@@ -168,6 +168,52 @@ secure boot on the STM32F405 - a JTAG/SWD attacker with a full mass-erase
 is out of scope without adding a hardware secure element on a future
 board revision).
 
+## 11. Add community Windows GUI (BSR v3.7 fork) at `community-gui-winforms/`
+
+Forked [Stijn Carelsbergh's ODrive V3 GUI](https://github.com/stijnsprojects/ODrive-V3-GUI)
+(CC BY-NC-SA 4.0 - kept under the same license per its ShareAlike term,
+distributed free of charge same as the original) and updated it for this
+project's open-source BSR v3.7 firmware fork:
+
+- Added the PWRGD enable/disable setting, the full MIT-mode (Cheetah-style
+  direct CAN control) config + live setpoint panels, and CAN bus health
+  telemetry (tx/rx error counts, bus-off flag, the `DUPLICATE_CAN_IDS`
+  error) - see `Firmware/docs/MIT_MODE_BSR.md` and `CAN_SAFETY_BSR.md` for
+  what each of these is.
+- Recognizes firmware revision 5 (this project's base, upstream
+  fw-v0.5.5) in addition to the 6/0 the original handled.
+- Fixed two stale values in the original that predate this fork and
+  didn't match any real ODrive firmware: the control-mode dropdown had an
+  invalid 5th entry, and the axis-error list was missing
+  `MOTOR_FAILED`/`SENSORLESS_ESTIMATOR_FAILED`/`ENCODER_FAILED`/
+  `CONTROLLER_FAILED`.
+- Fixed a build-breaking bug inherited from upstream: the `.csproj`
+  referenced a `PackageIcon` file (`odrive border.png`) that doesn't
+  exist anywhere in that project's git history, which made
+  `dotnet build`/`dotnet pack` fail with a missing-file error. Dropped
+  the missing reference; the actual window/taskbar icon is untouched.
+- Added a "Demo mode" (`Transport.cs`: `IDeviceTransport`,
+  `RealSerialTransport`, `DemoOdriveTransport`) that simulates a BSR v3.7
+  board's ASCII-protocol responses entirely in memory, so the interface -
+  including the new BSR panels - can be previewed with no board attached.
+  This GUI never had, and still doesn't have, any genuine-hardware/OTP
+  check to bypass: it talks to any board (upstream ODrive, a clone, or a
+  BSR board) that speaks the plain-text serial protocol.
+
+Note the distinction from item 10 above: this GUI configures the *open*
+BSR v3.7 design that this repository publishes. It has no relationship to
+the firmware lineage lock, which exists only in the separate, BSR-signed
+firmware that commercial E-dolly/Khepri units ship with, specifically so
+those units' torque/speed safety limits can't be removed by reflashing
+them with this open firmware.
+
+Not compiled/verified in this environment - the sandbox this fork was
+written in blocks `nuget.org` and `dot.net` by organization egress
+policy, so `dotnet restore`/`build` couldn't be run here. Reviewed by
+hand instead (brace/structure balance, call-site consistency, layout grid
+math); build on a normal machine per `community-gui-winforms/README.md`
+before relying on it.
+
 ---
 
 ## When pushing to GitHub

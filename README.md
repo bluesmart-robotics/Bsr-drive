@@ -16,6 +16,14 @@ Please refer to the [Developer Guide](https://docs.odriverobotics.com/v/latest/d
  * **Firmware**: ODrive firmware
  * **tools**: Python library & tools
  * **docs**: Documentation
+ * **GUI**: Official web-based configuration GUI (Electron/Vue)
+ * **community-gui-winforms**: Community Windows GUI (BSR v3.7 fork of
+   [Stijn Carelsbergh's ODrive V3 GUI](https://github.com/stijnsprojects/ODrive-V3-GUI),
+   CC BY-NC-SA 4.0) — adds PWRGD, MIT-mode CAN control, CAN health and a
+   hardware-free demo mode; see its own README for details
+
+See `BSR_CHANGELOG.md` for everything Blue Smart Robotics has changed in
+this fork relative to upstream ODrive.
 
 ### Other Resources
 
