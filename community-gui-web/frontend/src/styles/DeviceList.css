@@ -1,0 +1,248 @@
+.device-list {
+  padding: 20px;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+}
+
+.device-list-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+}
+
+.device-list-header h3 {
+  margin: 0;
+  color: #ffffff;
+}
+
+.scan-button {
+  padding: 8px 16px;
+  background-color: #0d7377;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: background-color 0.3s ease;
+}
+
+.scan-button:hover:not(:disabled) {
+  background-color: #14a085;
+}
+
+.scan-button:disabled {
+  background-color: #555;
+  cursor: not-allowed;
+}
+
+.devices {
+  flex: 1;
+  overflow-y: auto;
+}
+
+.no-devices {
+  text-align: center;
+  color: #888;
+  padding: 40px 0;
+}
+
+.device {
+  background-color: #404040;
+  border-radius: 8px;
+  padding: 15px;
+  margin-bottom: 10px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  transition: all 0.3s ease;
+}
+
+.device:hover {
+  background-color: #4a4a4a;
+}
+
+.device.connected {
+  background-color: #0d7377;
+  border: 1px solid #14a085;
+}
+
+.device-info {
+  flex: 1;
+}
+
+.device-name {
+  font-weight: bold;
+  margin-bottom: 5px;
+}
+
+.device-serial {
+  font-size: 0.8em;
+  color: #ccc;
+  margin-bottom: 2px;
+}
+
+.device-fw {
+  font-size: 0.8em;
+  color: #aaa;
+}
+
+.connect-button,
+.disconnect-button {
+  padding: 8px 16px;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: background-color 0.3s ease;
+}
+
+.connect-button {
+  background-color: #28a745;
+  color: white;
+}
+
+.connect-button:hover {
+  background-color: #218838;
+}
+
+.disconnect-button {
+  background-color: #dc3545;
+  color: white;
+}
+
+.disconnect-button:hover {
+  background-color: #c82333;
+}
+
+.device-status {
+  margin-top: 30px;
+  padding: 20px;
+  background-color: #333;
+  border-radius: 8px;
+}
+
+.device-status h4 {
+  margin: 0 0 15px 0;
+  color: #fff;
+}
+
+.status-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.status-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 8px 0;
+  border-bottom: 1px solid #555;
+}
+
+.status-item:last-child {
+  border-bottom: none;
+}
+
+.status-item.error {
+  color: #ff6b6b;
+}
+
+.status-item .label {
+  font-size: 0.9em;
+  color: #ccc;
+}
+
+.status-item .value {
+  font-weight: bold;
+  color: #fff;
+}
+
+.status-item.error .value {
+  color: #ff6b6b;
+}
+
+.device-list {
+  background: linear-gradient(180deg, #2d3748 0%, #1a202c 100%);
+}
+
+.device-list .device-card {
+  transition: all 0.2s ease-in-out;
+  border: 1px solid #4a5568;
+}
+
+.device-list .device-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+  border-color: #63b3ed;
+}
+
+.device-list .device-card.connected {
+  border-color: #68d391;
+  box-shadow: 0 0 0 1px rgba(104, 211, 145, 0.3);
+}
+
+.device-list .status-badge {
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.device-list .scan-button {
+  transition: all 0.15s ease;
+}
+
+.device-list .scan-button:hover {
+  transform: scale(1.05);
+}
+
+.device-list .connect-button {
+  min-width: 80px;
+  font-size: 0.875rem;
+  font-weight: 600;
+}
+
+.device-list .device-info {
+  font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
+}
+
+.device-list .status-indicator {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  display: inline-block;
+  margin-right: 6px;
+}
+
+.device-list .status-indicator.online {
+  background: #48bb78;
+  box-shadow: 0 0 6px rgba(72, 187, 120, 0.6);
+}
+
+.device-list .status-indicator.offline {
+  background: #a0aec0;
+}
+
+.device-list .scrollable-area {
+  scrollbar-width: thin;
+  scrollbar-color: #4a5568 #2d3748;
+}
+
+.device-list .scrollable-area::-webkit-scrollbar {
+  width: 6px;
+}
+
+.device-list .scrollable-area::-webkit-scrollbar-track {
+  background: #2d3748;
+  border-radius: 3px;
+}
+
+.device-list .scrollable-area::-webkit-scrollbar-thumb {
+  background: #4a5568;
+  border-radius: 3px;
+}
+
+.device-list .scrollable-area::-webkit-scrollbar-thumb:hover {
+  background: #63b3ed;
+}

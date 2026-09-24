@@ -1,0 +1,41 @@
+# Logs
+logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+lerna-debug.log*
+
+node_modules
+dist
+dist-ssr
+*.local
+
+# Editor directories and files
+.vscode/*
+!.vscode/extensions.json
+.idea
+.DS_Store
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+
+#Back-end directories and files (in ../backend/)
+# Ignore venv for python
+.venv/
+__pycache__/
+*.pyc
+
+# Build output
+dist/
+build/
+backend/build/
+backend/dist/
+
+# PyInstaller
+*.manifest
+
+# Note: lockfiles (package-lock.json) are committed for reproducible builds.
